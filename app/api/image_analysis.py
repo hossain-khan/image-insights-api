@@ -203,14 +203,17 @@ async def analyze_image(
     # Process image and get results
     response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)
 
-    # Log completion with timing
+    # Calculate and add processing time
     elapsed_time = time.time() - start_time
+    processing_time_ms = round(elapsed_time * 1000, 2)
+    response["processing_time_ms"] = processing_time_ms
+    
     if settings.ENABLE_DETAILED_LOGGING:
         metrics_used = ", ".join(requested_metrics)
         edge_info = f", Edge mode: {validated_edge_mode}" if validated_edge_mode else ""
         logger.info(
             f"Image analysis completed - Metrics: {metrics_used}{edge_info}, "
-            f"Duration: {elapsed_time * 1000:.2f}ms, "
+            f"Duration: {processing_time_ms}ms, "
             f"Dimensions: {response['width']}x{response['height']}, "
             f"Algorithm: {settings.LUMINANCE_ALGORITHM}"
         )
@@ -266,14 +269,17 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     # Process image and get results
     response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)
 
-    # Log completion with timing
+    # Calculate and add processing time
     elapsed_time = time.time() - start_time
+    processing_time_ms = round(elapsed_time * 1000, 2)
+    response["processing_time_ms"] = processing_time_ms
+    
     if settings.ENABLE_DETAILED_LOGGING:
         metrics_used = ", ".join(requested_metrics)
         edge_info = f", Edge mode: {validated_edge_mode}" if validated_edge_mode else ""
         logger.info(
             f"Image analysis completed - Metrics: {metrics_used}{edge_info}, "
-            f"Duration: {elapsed_time * 1000:.2f}ms, "
+            f"Duration: {processing_time_ms}ms, "
             f"Dimensions: {response['width']}x{response['height']}, "
             f"Algorithm: {settings.LUMINANCE_ALGORITHM}"
         )
