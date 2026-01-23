@@ -85,3 +85,36 @@ def validate_metrics(metrics: str | None) -> set[str]:
         return {"brightness"}
 
     return requested
+
+
+def validate_edge_mode(edge_mode: str | None) -> str | None:
+    """
+    Validate edge mode parameter.
+
+    Args:
+        edge_mode: Edge mode string
+
+    Returns:
+        Validated edge mode or None
+
+    Raises:
+        HTTPException: If invalid edge mode requested
+    """
+    valid_modes = {"left_right", "top_bottom", "all"}
+
+    if edge_mode is None:
+        return None
+
+    mode = edge_mode.strip().lower()
+
+    if mode not in valid_modes:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": "Invalid edge_mode requested",
+                "received": edge_mode,
+                "valid_modes": list(valid_modes),
+            },
+        )
+
+    return mode

@@ -272,3 +272,116 @@ class TestRec709Algorithm:
         # Expected luminance: 0.2126*100 + 0.7152*100 + 0.0722*100 = 100
         expected_luminance = 100.0
         assert abs(data["average_luminance"] - expected_luminance) < 0.01
+
+
+class TestEdgeMode:
+    """Test edge-based brightness functionality."""
+
+    def test_edge_mode_left_right(self, client, create_test_image):
+        """Test left_right edge mode analysis."""
+        # Create image with bright left/right edges
+        img = create_test_image(color=(200, 200, 200), size=(100, 100))
+
+        response = client.post(
+            "/v1/image/analysis?edge_mode=left_right",
+            files={"image": ("test.png", img, "image/png")},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should include edge metrics
+        assert "edge_brightness_score" in data
+        assert "edge_average_luminance" in data
+        assert "edge_mode" in data
+        assert data["edge_mode"] == "left_right"
+
+        # Uniform image should have same edge and overall brightness
+        assert data["edge_brightness_score"] == data["brightness_score"]
+
+    def test_edge_mode_top_bottom(self, client, create_test_image):
+        """Test top_bottom edge mode analysis."""
+        img = create_test_image(color=(150, 150, 150), size=(100, 100))
+
+        response = client.post(
+            "/v1/image/analysis?edge_mode=top_bottom",
+            files={"image": ("test.png", img, "image/png")},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["edge_mode"] == "top_bottom"
+        assert "edge_brightness_score" in data
+
+    def test_edge_mode_all(self, client, create_test_image):
+        """Test all edges mode analysis."""
+        img = create_test_image(color=(100, 100, 100), size=(100, 100))
+
+        response = client.post(
+            "/v1/image/analysis?edge_mode=all",
+            files={"image": ("test.png", img, "image/png")},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        assert data["edge_mode"] == "all"
+        assert "edge_brightness_score" in data
+
+    def test_edge_mode_without_metrics(self, client, gray_image):
+        """Test edge mode works independently of metrics parameter."""
+        response = client.post(
+            "/v1/image/analysis?edge_mode=left_right",
+            files={"image": ("test.png", gray_image, "image/png")},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should have both default brightness and edge brightness
+        assert "brightness_score" in data
+        assert "edge_brightness_score" in data
+
+    def test_edge_mode_with_multiple_metrics(self, client, gray_image):
+        """Test edge mode combined with other metrics."""
+        response = client.post(
+            "/v1/image/analysis?metrics=brightness,median,histogram&edge_mode=all",
+            files={"image": ("test.png", gray_image, "image/png")},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should have all requested metrics plus edge metrics
+        assert "brightness_score" in data
+        assert "median_luminance" in data
+        assert "histogram" in data
+        assert "edge_brightness_score" in data
+        assert "edge_mode" in data
+
+    def test_invalid_edge_mode(self, client, gray_image):
+        """Test invalid edge mode returns 400."""
+        response = client.post(
+            "/v1/image/analysis?edge_mode=invalid_mode",
+            files={"image": ("test.png", gray_image, "image/png")},
+        )
+
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data["detail"]
+        assert "valid_modes" in data["detail"]
+
+    def test_edge_mode_none(self, client, gray_image):
+        """Test that no edge mode returns no edge metrics."""
+        response = client.post(
+            "/v1/image/analysis", files={"image": ("test.png", gray_image, "image/png")}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Should not have edge metrics
+        assert "edge_brightness_score" not in data
+        assert "edge_average_luminance" not in data
+        assert "edge_mode" not in data

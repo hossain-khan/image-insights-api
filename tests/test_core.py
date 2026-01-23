@@ -8,6 +8,7 @@ from app.core.histogram import calculate_histogram
 from app.core.luminance import (
     calculate_average_luminance,
     calculate_brightness_score,
+    calculate_edge_luminance,
     calculate_luminance,
     calculate_median_luminance,
 )
@@ -163,3 +164,99 @@ class TestHistogram:
         luminance = np.array([]).reshape(0, 0)
         histogram = calculate_histogram(luminance)
         assert histogram == []
+
+
+class TestEdgeLuminance:
+    """Test edge-based luminance calculation functions."""
+
+    def test_edge_luminance_left_right(self):
+        """Test left and right edge extraction."""
+        # Create a 100x100 image where left is dark (0) and right is bright (255)
+        luminance = np.zeros((100, 100), dtype=np.float64)
+        luminance[:, 50:] = 255.0
+
+        edge_values = calculate_edge_luminance(luminance, "left_right")
+
+        # Should extract 10 pixels from left (all 0) and 10 from right (all 255)
+        # Left edge: 100 rows * 10 cols = 1000 pixels of value 0
+        # Right edge: 100 rows * 10 cols = 1000 pixels of value 255
+        # Average should be around 127.5
+        avg = edge_values.mean()
+        assert 120 < avg < 135
+
+    def test_edge_luminance_top_bottom(self):
+        """Test top and bottom edge extraction."""
+        # Create a 100x100 image where top is dark (0) and bottom is bright (255)
+        luminance = np.zeros((100, 100), dtype=np.float64)
+        luminance[50:, :] = 255.0
+
+        edge_values = calculate_edge_luminance(luminance, "top_bottom")
+
+        # Should extract 10 rows from top and 10 from bottom
+        avg = edge_values.mean()
+        assert 120 < avg < 135
+
+    def test_edge_luminance_all(self):
+        """Test all edges extraction."""
+        # Create a 100x100 image with bright edges
+        luminance = np.zeros((100, 100), dtype=np.float64)
+        # Top edge
+        luminance[:10, :] = 255.0
+        # Bottom edge
+        luminance[-10:, :] = 255.0
+        # Left edge
+        luminance[:, :10] = 255.0
+        # Right edge
+        luminance[:, -10:] = 255.0
+
+        edge_values = calculate_edge_luminance(luminance, "all")
+
+        # All edge pixels should be bright
+        avg = edge_values.mean()
+        assert avg == 255.0
+
+    def test_edge_luminance_invalid_mode(self):
+        """Test invalid edge mode raises ValueError."""
+        luminance = np.zeros((100, 100), dtype=np.float64)
+
+        with np.testing.assert_raises(ValueError):
+            calculate_edge_luminance(luminance, "invalid_mode")
+
+    def test_edge_luminance_small_image(self):
+        """Test edge extraction on very small images."""
+        # 10x10 image - 10% would be 1 pixel
+        luminance = np.ones((10, 10), dtype=np.float64) * 128.0
+
+        edge_values = calculate_edge_luminance(luminance, "left_right")
+
+        # Should still work with 1 pixel width
+        assert len(edge_values) > 0
+        assert edge_values.mean() == 128.0
+
+    def test_edge_luminance_uniform_image(self):
+        """Test edge extraction on uniform image."""
+        # All pixels same value
+        luminance = np.full((100, 100), 200.0, dtype=np.float64)
+
+        for mode in ["left_right", "top_bottom", "all"]:
+            edge_values = calculate_edge_luminance(luminance, mode)
+            assert edge_values.mean() == 200.0
+
+    def test_edge_luminance_percentage_extraction(self):
+        """Test that exactly 10% of width/height is extracted."""
+        # 200x100 image
+        luminance = np.zeros((100, 200), dtype=np.float64)
+
+        # Left/right mode: should extract 20 pixels width (10% of 200)
+        edge_values = calculate_edge_luminance(luminance, "left_right")
+        # Left: 100 rows * 20 cols = 2000
+        # Right: 100 rows * 20 cols = 2000
+        # Total: 4000 pixels
+        assert len(edge_values) == 4000
+
+        # Top/bottom mode: should extract 10 pixels height (10% of 100)
+        edge_values = calculate_edge_luminance(luminance, "top_bottom")
+        # Top: 10 rows * 200 cols = 2000
+        # Bottom: 10 rows * 200 cols = 2000
+        # Total: 4000 pixels
+        assert len(edge_values) == 4000
