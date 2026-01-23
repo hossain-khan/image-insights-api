@@ -2,8 +2,8 @@
   "swagger": "2.0",
   "info": {
     "title": "Image Insights API",
-    "description": "A lightweight REST API for image brightness analysis using Rec. 709 perceptual luminance.\n\n## Features\n- Brightness scoring (0-100)\n- Median luminance calculation\n- Histogram distribution analysis\n- Processing time metrics\n\n## Algorithm\nUses ITU-R BT.709 standard: `L = 0.2126R + 0.7152G + 0.0722B`",
-    "version": "1.4.0",
+    "description": "A lightweight REST API for image brightness analysis using Rec. 709 perceptual luminance.\n\n## Features\n- Brightness scoring (0-100)\n- Median luminance calculation\n- Histogram distribution analysis\n- Processing time metrics\n- Comprehensive startup logging\n\n## Algorithm\nUses ITU-R BT.709 standard: `L = 0.2126R + 0.7152G + 0.0722B`",
+    "version": "1.5.0",
     "contact": {
       "name": "Image Insights API Team"
     },
