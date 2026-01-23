@@ -3,4 +3,213 @@
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 
 # 🖼️ Image Insights API
-A lightweight, containerized REST API that analyzes JPEG and PNG images and returns a perceptual darkness score (0–100) using Rec. 709 luminance. Built with FastAPI and Docker for easy deployment anywhere.
+
+A lightweight, containerized REST API that analyzes JPEG and PNG images and returns perceptual brightness metrics using Rec. 709 luminance. Built with FastAPI and Docker for easy deployment anywhere.
+
+## ✨ Features
+
+- **Brightness Analysis**: Perceptual brightness scoring (0-100) using Rec. 709 standard
+- **Median Luminance**: Statistical median for images with extreme highlights/shadows
+- **Histogram**: Distribution analysis across 10 luminance buckets
+- **Fast & Lightweight**: < 100ms for typical images
+- **Portable**: Deploy anywhere Docker runs
+- **OpenAPI Documentation**: Auto-generated Swagger UI
+
+## 🚀 Quick Start
+
+### Using Docker (Recommended)
+
+```bash
+# Build the image
+docker build -t image-analysis-api .
+
+# Run the container
+docker run -p 8080:8080 image-analysis-api
+```
+
+Or use Docker Compose:
+
+```bash
+docker compose up --build
+```
+
+### Local Development
+
+```bash
+# Create virtual environment
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the server
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+```
+
+## 📖 API Usage
+
+### Endpoint
+
+```
+POST /v1/image/analysis
+```
+
+### Basic Request
+
+```bash
+curl -X POST http://localhost:8080/v1/image/analysis \
+  -F "image=@photo.jpg"
+```
+
+### Response
+
+```json
+{
+  "brightness_score": 73,
+  "average_luminance": 186.3,
+  "width": 1920,
+  "height": 1080,
+  "algorithm": "rec709"
+}
+```
+
+### Request with All Metrics
+
+```bash
+curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median,histogram" \
+  -F "image=@photo.jpg"
+```
+
+### Full Response
+
+```json
+{
+  "brightness_score": 73,
+  "average_luminance": 186.3,
+  "median_luminance": 172.4,
+  "histogram": [
+    {"range": "0-25", "percent": 2.1},
+    {"range": "26-51", "percent": 5.3},
+    {"range": "52-76", "percent": 8.7},
+    {"range": "77-102", "percent": 12.4},
+    {"range": "103-127", "percent": 15.2},
+    {"range": "128-153", "percent": 18.6},
+    {"range": "154-178", "percent": 14.3},
+    {"range": "179-204", "percent": 10.8},
+    {"range": "205-229", "percent": 7.1},
+    {"range": "230-255", "percent": 5.5}
+  ],
+  "width": 1920,
+  "height": 1080,
+  "algorithm": "rec709"
+}
+```
+
+### Available Metrics
+
+| Metric | Description |
+|--------|-------------|
+| `brightness` | Brightness score (0-100) and average luminance (default) |
+| `median` | Median luminance value |
+| `histogram` | Distribution across 10 luminance buckets |
+
+## 📚 API Documentation
+
+Once running, access the interactive documentation:
+
+- **Swagger UI**: http://localhost:8080/docs
+- **ReDoc**: http://localhost:8080/redoc
+- **OpenAPI JSON**: http://localhost:8080/openapi.json
+
+## 🔬 Algorithm
+
+Uses the **ITU-R BT.709 (Rec. 709)** standard for perceptual luminance:
+
+```
+L = 0.2126R + 0.7152G + 0.0722B
+```
+
+The brightness score is calculated as:
+
+```
+brightness_score = round((average_luminance / 255) * 100)
+```
+
+- **0** = Pure black
+- **100** = Pure white
+
+## ⚙️ Configuration
+
+| Setting | Value | Description |
+|---------|-------|-------------|
+| Max file size | 5MB | Maximum upload size |
+| Allowed formats | JPEG, PNG | Supported image types |
+| Max dimension | 512px | Images are resized for performance |
+| Timeout | 2 seconds | Request processing limit |
+
+## 🧪 Testing
+
+```bash
+# Install dev dependencies
+pip install -r requirements.txt
+
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov=app --cov-report=html
+```
+
+## 📁 Project Structure
+
+```
+image-analysis-api/
+├── app/
+│   ├── __init__.py
+│   ├── main.py              # FastAPI application
+│   ├── config.py            # Configuration settings
+│   ├── api/
+│   │   ├── __init__.py
+│   │   └── image_analysis.py  # API endpoint
+│   └── core/
+│       ├── __init__.py
+│       ├── luminance.py     # Brightness calculations
+│       ├── resize.py        # Image resizing
+│       ├── histogram.py     # Histogram analysis
+│       └── validators.py    # Input validation
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py          # Test fixtures
+│   ├── test_api.py          # API tests
+│   └── test_core.py         # Core module tests
+├── docs/
+│   ├── PRD.md
+│   └── TECHNICALS.md
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+├── pyproject.toml
+└── README.md
+```
+
+## 🌐 Deployment
+
+The API is stateless and can be deployed to:
+
+- AWS ECS / Fargate
+- Google Cloud Run
+- Azure Container Apps
+- Kubernetes
+- Fly.io
+- Any Docker-compatible platform
+
+### Health Check
+
+```bash
+curl http://localhost:8080/health
+```
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE) for details.
