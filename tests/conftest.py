@@ -1,9 +1,10 @@
 """Pytest configuration and fixtures."""
 
 import io
+
 import pytest
-from PIL import Image
 from fastapi.testclient import TestClient
+from PIL import Image
 
 from app.main import app
 
@@ -17,19 +18,20 @@ def client():
 @pytest.fixture
 def create_test_image():
     """Factory fixture to create test images with specific colors."""
+
     def _create_image(
         color: tuple[int, int, int] = (128, 128, 128),
         size: tuple[int, int] = (100, 100),
-        format: str = "PNG"
+        format: str = "PNG",
     ) -> io.BytesIO:
         """
         Create a test image.
-        
+
         Args:
             color: RGB tuple (0-255)
             size: (width, height)
             format: Image format (PNG, JPEG)
-            
+
         Returns:
             BytesIO buffer with the image
         """
@@ -38,7 +40,7 @@ def create_test_image():
         img.save(buffer, format=format)
         buffer.seek(0)
         return buffer
-    
+
     return _create_image
 
 
