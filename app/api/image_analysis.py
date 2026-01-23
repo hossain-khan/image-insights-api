@@ -59,7 +59,9 @@ async def analyze_image(
     file_size_mb = len(contents) / (1024 * 1024)
 
     if settings.ENABLE_DETAILED_LOGGING:
-        logger.info(f"File validated - Size: {file_size_mb:.2f}MB, Content-Type: {image.content_type}")
+        logger.info(
+            f"File validated - Size: {file_size_mb:.2f}MB, Content-Type: {image.content_type}"
+        )
 
     # Parse image
     try:
@@ -119,7 +121,7 @@ async def analyze_image(
         metrics_used = ", ".join(requested_metrics)
         logger.info(
             f"Image analysis completed - Metrics: {metrics_used}, "
-            f"Duration: {elapsed_time*1000:.2f}ms, "
+            f"Duration: {elapsed_time * 1000:.2f}ms, "
             f"Dimensions: {original_width}x{original_height}, "
             f"Algorithm: {settings.LUMINANCE_ALGORITHM}"
         )
