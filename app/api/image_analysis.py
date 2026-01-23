@@ -1,6 +1,8 @@
 """Image analysis API endpoint."""
 
 import io
+import logging
+import time
 from typing import Annotated, Any
 
 import numpy as np
@@ -18,6 +20,8 @@ from app.core import (
     validate_image_upload,
     validate_metrics,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/image", tags=["image-analysis"])
 
@@ -42,11 +46,20 @@ async def analyze_image(
 
     Returns deterministic results for the same input image.
     """
+    start_time = time.time()
+
+    if settings.ENABLE_DETAILED_LOGGING:
+        logger.info(f"Image analysis request started - File: {image.filename}, Metrics: {metrics}")
+
     # Validate metrics parameter
     requested_metrics = validate_metrics(metrics)
 
     # Validate and read image
     contents = await validate_image_upload(image)
+    file_size_mb = len(contents) / (1024 * 1024)
+
+    if settings.ENABLE_DETAILED_LOGGING:
+        logger.info(f"File validated - Size: {file_size_mb:.2f}MB, Content-Type: {image.content_type}")
 
     # Parse image
     try:
@@ -63,8 +76,14 @@ async def analyze_image(
     # Store original dimensions
     original_width, original_height = img.size
 
+    if settings.ENABLE_DETAILED_LOGGING:
+        logger.info(f"Image loaded - Original dimensions: {original_width}x{original_height}")
+
     # Resize if needed for performance
     img = resize_image_if_needed(img)
+
+    if img.size != (original_width, original_height) and settings.ENABLE_DETAILED_LOGGING:
+        logger.info(f"Image resized - New dimensions: {img.size[0]}x{img.size[1]}")
 
     # Convert to numpy array
     rgb_array = np.array(img)
@@ -93,5 +112,17 @@ async def analyze_image(
     response["width"] = original_width
     response["height"] = original_height
     response["algorithm"] = settings.LUMINANCE_ALGORITHM
+
+    # Log completion with timing
+    elapsed_time = time.time() - start_time
+    if settings.ENABLE_DETAILED_LOGGING:
+        metrics_used = ", ".join(requested_metrics)
+        logger.info(
+            f"Image analysis completed - "
+            f"Metrics: {metrics_used}, "
+            f"Duration: {elapsed_time*1000:.2f}ms, "
+            f"Dimensions: {original_width}x{original_height}, "
+            f"Algorithm: {settings.LUMINANCE_ALGORITHM}"
+        )
 
     return response
