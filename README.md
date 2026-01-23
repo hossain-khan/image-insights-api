@@ -1,4 +1,5 @@
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
+![GHCR](https://img.shields.io/badge/ghcr.io-image--insights--api-blue?logo=github&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688?logo=fastapi&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
 
@@ -17,20 +18,32 @@ A lightweight, containerized REST API that analyzes JPEG and PNG images and retu
 
 ## 🚀 Quick Start
 
-### Using Docker (Recommended)
+### Using Pre-built Docker Image (Recommended)
+
+Pull and run the image from GitHub Container Registry:
 
 ```bash
-# Build the image
-docker build -t image-insights-api .
+# Pull the latest image
+docker pull ghcr.io/hossain-khan/image-insights-api:latest
 
 # Run the container
-docker run -p 8080:8080 image-insights-api
+docker run -p 8080:8080 ghcr.io/hossain-khan/image-insights-api:latest
 ```
 
 Or use Docker Compose:
 
 ```bash
-docker compose up --build
+docker compose up -d
+```
+
+### Building from Source
+
+```bash
+# Build the image locally
+docker build -t image-insights-api .
+
+# Run the container
+docker run -p 8080:8080 image-insights-api
 ```
 
 ### Local Development
@@ -195,14 +208,45 @@ image-insights-api/
 
 ## 🌐 Deployment
 
+### Docker Compose (Easiest)
+
+The included `docker-compose.yml` is ready for production deployment:
+
+```bash
+# Start the service
+docker compose up -d
+
+# View logs
+docker compose logs -f image-insights-api
+
+# Stop the service
+docker compose down
+
+# Update to latest version
+docker compose pull && docker compose up -d
+```
+
+### Container Platforms
+
 The API is stateless and can be deployed to:
 
 - AWS ECS / Fargate
 - Google Cloud Run
 - Azure Container Apps
 - Kubernetes
+- Oracle Cloud Container Instances
 - Fly.io
 - Any Docker-compatible platform
+
+### Docker Image
+
+Available from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/hossain-khan/image-insights-api:latest
+```
+
+**Supported platforms:** `linux/amd64`, `linux/arm64`
 
 ### Health Check
 
