@@ -390,10 +390,15 @@ class TestEdgeMode:
 class TestImageAnalysisUrlEndpoint:
     """Test POST /v1/image/analysis/url endpoint."""
 
-    def test_analyze_image_from_valid_url(self, client, httpx_mock):
+    @staticmethod
+    def _image_to_bytes(image_buffer):
+        """Convert BytesIO buffer to bytes for httpx_mock."""
+        return image_buffer.getvalue()
+
+    def test_analyze_image_from_valid_url(self, client, httpx_mock, create_test_image):
         """Test analysis of image from a valid URL."""
         # Mock the HTTP request
-        test_image = self._create_test_png((128, 128, 128))
+        test_image = self._image_to_bytes(create_test_image((128, 128, 128)))
         httpx_mock.add_response(
             url="https://example.com/test.png",
             content=test_image,
@@ -411,9 +416,9 @@ class TestImageAnalysisUrlEndpoint:
         assert "width" in data
         assert "height" in data
 
-    def test_analyze_black_image_from_url(self, client, httpx_mock):
+    def test_analyze_black_image_from_url(self, client, httpx_mock, create_test_image):
         """Test analysis of pure black image from URL returns brightness 0."""
-        test_image = self._create_test_png((0, 0, 0))
+        test_image = self._image_to_bytes(create_test_image((0, 0, 0)))
         httpx_mock.add_response(
             url="https://example.com/black.png",
             content=test_image,
@@ -428,9 +433,9 @@ class TestImageAnalysisUrlEndpoint:
         assert data["brightness_score"] == 0
         assert data["average_luminance"] == 0.0
 
-    def test_analyze_white_image_from_url(self, client, httpx_mock):
+    def test_analyze_white_image_from_url(self, client, httpx_mock, create_test_image):
         """Test analysis of pure white image from URL returns brightness 100."""
-        test_image = self._create_test_png((255, 255, 255))
+        test_image = self._image_to_bytes(create_test_image((255, 255, 255)))
         httpx_mock.add_response(
             url="https://example.com/white.png",
             content=test_image,
@@ -445,9 +450,9 @@ class TestImageAnalysisUrlEndpoint:
         assert data["brightness_score"] == 100
         assert data["average_luminance"] == 255.0
 
-    def test_analyze_jpeg_from_url(self, client, httpx_mock):
+    def test_analyze_jpeg_from_url(self, client, httpx_mock, create_test_image):
         """Test analysis works with JPEG from URL."""
-        test_image = self._create_test_jpeg((128, 128, 128))
+        test_image = self._image_to_bytes(create_test_image((128, 128, 128), format="JPEG"))
         httpx_mock.add_response(
             url="https://example.com/test.jpg",
             content=test_image,
@@ -461,9 +466,9 @@ class TestImageAnalysisUrlEndpoint:
         data = response.json()
         assert "brightness_score" in data
 
-    def test_url_endpoint_with_metrics_parameter(self, client, httpx_mock):
+    def test_url_endpoint_with_metrics_parameter(self, client, httpx_mock, create_test_image):
         """Test URL endpoint with metrics parameter."""
-        test_image = self._create_test_png((128, 128, 128))
+        test_image = self._image_to_bytes(create_test_image((128, 128, 128)))
         httpx_mock.add_response(
             url="https://example.com/test.png",
             content=test_image,
@@ -480,9 +485,9 @@ class TestImageAnalysisUrlEndpoint:
         assert "median_luminance" in data
         assert "histogram" in data
 
-    def test_url_endpoint_with_edge_mode(self, client, httpx_mock):
+    def test_url_endpoint_with_edge_mode(self, client, httpx_mock, create_test_image):
         """Test URL endpoint with edge mode parameter."""
-        test_image = self._create_test_png((128, 128, 128))
+        test_image = self._image_to_bytes(create_test_image((128, 128, 128)))
         httpx_mock.add_response(
             url="https://example.com/test.png",
             content=test_image,
@@ -591,27 +596,3 @@ class TestImageAnalysisUrlEndpoint:
         assert response.status_code == 400
         data = response.json()
         assert "error" in data["detail"]
-
-    @staticmethod
-    def _create_test_png(color: tuple[int, int, int], size: tuple[int, int] = (100, 100)) -> bytes:
-        """Create a test PNG image."""
-        import io
-
-        from PIL import Image
-
-        img = Image.new("RGB", size, color)
-        buffer = io.BytesIO()
-        img.save(buffer, format="PNG")
-        return buffer.getvalue()
-
-    @staticmethod
-    def _create_test_jpeg(color: tuple[int, int, int], size: tuple[int, int] = (100, 100)) -> bytes:
-        """Create a test JPEG image."""
-        import io
-
-        from PIL import Image
-
-        img = Image.new("RGB", size, color)
-        buffer = io.BytesIO()
-        img.save(buffer, format="JPEG")
-        return buffer.getvalue()
