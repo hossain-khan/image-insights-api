@@ -72,6 +72,51 @@ Analyze an image and return brightness metrics.
 
 Edge mode is useful for determining background colors that blend well with the image edges. When specified, returns `edge_brightness_score`, `edge_average_luminance`, and `edge_mode` in the response.
 
+#### `POST /v1/image/analysis/url`
+
+Analyze an image from a URL and return brightness metrics.
+
+**Request:**
+
+| Parameter | Type | Location | Required | Description |
+|-----------|------|----------|----------|-------------|
+| `url` | string | JSON body | Yes | URL of the JPEG or PNG image to analyze |
+| `metrics` | string | JSON body | No | Comma-separated list of metrics |
+| `edge_mode` | string | JSON body | No | Edge-based brightness analysis mode |
+
+**Request Body (JSON):**
+```json
+{
+  "url": "https://example.com/image.jpg",
+  "metrics": "brightness,median,histogram",
+  "edge_mode": "all"
+}
+```
+
+**Supported Metrics:**
+
+| Metric | Description |
+|--------|-------------|
+| `brightness` | Brightness score (0-100) and average luminance. **Default if not specified.** |
+| `median` | Median luminance value |
+| `histogram` | Distribution of luminance values across 10 buckets |
+
+**Edge Mode (Optional):**
+
+| Edge Mode | Description |
+|-----------|-------------|
+| `left_right` | Analyze brightness of left and right edges (10% of width each) |
+| `top_bottom` | Analyze brightness of top and bottom edges (10% of height each) |
+| `all` | Analyze brightness of all four edges (10% from each side) |
+
+Edge mode is useful for determining background colors that blend well with the image edges. When specified, returns `edge_brightness_score`, `edge_average_luminance`, and `edge_mode` in the response.
+
+**Constraints:**
+- Maximum image size: 5MB
+- Supported formats: JPEG, PNG
+- Request timeout: 2 seconds
+- Private/local network URLs are blocked for security
+
 ---
 
 ## Usage Examples
@@ -261,6 +306,50 @@ form.append('image', fs.createReadStream('photo.jpg'));
 
 axios.post('http://localhost:8080/v1/image/analysis?metrics=brightness', form, {
   headers: form.getHeaders()
+}).then(response => {
+  console.log('Brightness Score:', response.data.brightness_score);
+});
+```
+
+### URL-Based Analysis Examples
+
+#### cURL Example
+
+```bash
+curl -X POST "http://localhost:8080/v1/image/analysis/url" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/photo.jpg",
+    "metrics": "brightness,median,histogram",
+    "edge_mode": "all"
+  }'
+```
+
+#### Python Example
+
+```python
+import requests
+
+url = "http://localhost:8080/v1/image/analysis/url"
+payload = {
+    "url": "https://example.com/photo.jpg",
+    "metrics": "brightness,median,histogram"
+}
+
+response = requests.post(url, json=payload)
+data = response.json()
+print(f"Brightness Score: {data['brightness_score']}")
+print(f"Average Luminance: {data['average_luminance']}")
+```
+
+#### JavaScript/Node.js Example
+
+```javascript
+const axios = require('axios');
+
+axios.post('http://localhost:8080/v1/image/analysis/url', {
+  url: 'https://example.com/photo.jpg',
+  metrics: 'brightness,median'
 }).then(response => {
   console.log('Brightness Score:', response.data.brightness_score);
 });

@@ -4,6 +4,7 @@ import io
 import logging
 import time
 from typing import Annotated, Any
+from urllib.parse import urlparse
 
 import numpy as np
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
@@ -30,6 +31,27 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/v1/image", tags=["image-analysis"])
 
 
+def _redact_url_for_logging(url: str) -> str:
+    """
+    Redact sensitive information from URL for safe logging.
+
+    Removes query parameters and userinfo to prevent leaking credentials or tokens.
+
+    Args:
+        url: The URL to redact
+
+    Returns:
+        Redacted URL with only scheme, hostname, and path
+    """
+    try:
+        parsed = urlparse(url)
+        # Keep only scheme, hostname, and path
+        redacted = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
+        return redacted
+    except Exception:
+        return "[invalid-url]"
+
+
 class ImageUrlRequest(BaseModel):
     """Request model for URL-based image analysis."""
 
@@ -47,7 +69,6 @@ def _process_image_bytes(
     contents: bytes,
     requested_metrics: set[str],
     validated_edge_mode: str | None,
-    source_info: str,
 ) -> dict[str, Any]:
     """
     Process image bytes and return analysis results.
@@ -56,7 +77,6 @@ def _process_image_bytes(
         contents: Raw image bytes
         requested_metrics: Set of metrics to calculate
         validated_edge_mode: Validated edge mode (if any)
-        source_info: Description of image source for logging
 
     Returns:
         Dictionary with analysis results
@@ -181,9 +201,7 @@ async def analyze_image(
         )
 
     # Process image and get results
-    response = _process_image_bytes(
-        contents, requested_metrics, validated_edge_mode, f"File: {image.filename}"
-    )
+    response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)
 
     # Log completion with timing
     elapsed_time = time.time() - start_time
@@ -223,9 +241,12 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     """
     start_time = time.time()
 
+    # Redact URL for safe logging
+    redacted_url = _redact_url_for_logging(request.url)
+
     if settings.ENABLE_DETAILED_LOGGING:
         logger.info(
-            f"Image analysis request started - URL: {request.url}, "
+            f"Image analysis request started - URL: {redacted_url}, "
             f"Metrics: {request.metrics}, Edge mode: {request.edge_mode}"
         )
 
@@ -240,12 +261,10 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     file_size_mb = len(contents) / (1024 * 1024)
 
     if settings.ENABLE_DETAILED_LOGGING:
-        logger.info(f"Image downloaded - Size: {file_size_mb:.2f}MB, URL: {request.url}")
+        logger.info(f"Image downloaded - Size: {file_size_mb:.2f}MB, URL: {redacted_url}")
 
     # Process image and get results
-    response = _process_image_bytes(
-        contents, requested_metrics, validated_edge_mode, f"URL: {request.url}"
-    )
+    response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)
 
     # Log completion with timing
     elapsed_time = time.time() - start_time
