@@ -133,6 +133,7 @@ curl -X POST http://localhost:8080/v1/image/analysis \
 {
   "brightness_score": 73,
   "average_luminance": 186.3,
+  "processing_time_ms": 0.45,
   "width": 1920,
   "height": 1080,
   "algorithm": "rec709"
@@ -152,6 +153,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median"
   "brightness_score": 73,
   "average_luminance": 186.3,
   "median_luminance": 172.4,
+  "processing_time_ms": 0.48,
   "width": 1920,
   "height": 1080,
   "algorithm": "rec709"
@@ -183,6 +185,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median,
     { "range": "205-229", "percent": 7.1 },
     { "range": "230-255", "percent": 5.5 }
   ],
+  "processing_time_ms": 0.52,
   "width": 1920,
   "height": 1080,
   "algorithm": "rec709"
@@ -208,6 +211,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=left_right" \
   "edge_brightness_score": 85,
   "edge_average_luminance": 217.4,
   "edge_mode": "left_right",
+  "processing_time_ms": 0.43,
   "width": 1920,
   "height": 1080,
   "algorithm": "rec709"
@@ -229,6 +233,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=top_bottom" \
   "edge_brightness_score": 92,
   "edge_average_luminance": 234.6,
   "edge_mode": "top_bottom",
+  "processing_time_ms": 0.51,
   "width": 1920,
   "height": 1080,
   "algorithm": "rec709"
@@ -250,6 +255,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
   "edge_brightness_score": 88,
   "edge_average_luminance": 224.4,
   "edge_mode": "all",
+  "processing_time_ms": 0.46,
   "width": 1920,
   "height": 1080,
   "algorithm": "rec709"
@@ -272,6 +278,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median&
   "edge_brightness_score": 85,
   "edge_average_luminance": 217.4,
   "edge_mode": "left_right",
+  "processing_time_ms": 0.47,
   "width": 1920,
   "height": 1080,
   "algorithm": "rec709"
@@ -387,6 +394,12 @@ axios.post('http://localhost:8080/v1/image/analysis/url', {
 | `edge_brightness_score` | integer | Brightness score (0-100) for the specified edges |
 | `edge_average_luminance` | float | Average luminance value (0-255) for the specified edges |
 | `edge_mode` | string | Edge mode used (`left_right`, `top_bottom`, or `all`) |
+
+### Processing Time (Always Included)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `processing_time_ms` | float | Time taken to process the image in milliseconds |
 
 ### Metadata (Always Included)
 
