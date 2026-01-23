@@ -118,8 +118,7 @@ async def analyze_image(
     if settings.ENABLE_DETAILED_LOGGING:
         metrics_used = ", ".join(requested_metrics)
         logger.info(
-            f"Image analysis completed - "
-            f"Metrics: {metrics_used}, "
+            f"Image analysis completed - Metrics: {metrics_used}, "
             f"Duration: {elapsed_time*1000:.2f}ms, "
             f"Dimensions: {original_width}x{original_height}, "
             f"Algorithm: {settings.LUMINANCE_ALGORITHM}"
