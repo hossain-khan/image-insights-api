@@ -1,6 +1,12 @@
 """Application configuration settings."""
 
+import os
 from dataclasses import dataclass
+
+
+def _get_logging_config() -> bool:
+    """Get logging configuration from environment variable."""
+    return os.getenv("ENABLE_DETAILED_LOGGING", "true").lower() == "true"
 
 
 @dataclass(frozen=True)
@@ -26,6 +32,9 @@ class Settings:
     # Histogram settings
     HISTOGRAM_BUCKETS: int = 10
     LUMINANCE_MAX: int = 255
+
+    # Logging
+    ENABLE_DETAILED_LOGGING: bool = _get_logging_config()
 
 
 settings = Settings()

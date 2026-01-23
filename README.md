@@ -154,12 +154,30 @@ brightness_score = round((average_luminance / 255) * 100)
 
 ## ⚙️ Configuration
 
+### API Constraints
+
 | Setting | Value | Description |
 |---------|-------|-------------|
 | Max file size | 5MB | Maximum upload size |
 | Allowed formats | JPEG, PNG | Supported image types |
 | Max dimension | 512px | Images are resized for performance |
 | Timeout | 2 seconds | Request processing limit |
+
+### Environment Variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ENABLE_DETAILED_LOGGING` | `true` | Enable detailed application logging (request info, processing time, dimensions) |
+
+**Example:**
+
+```bash
+# Disable detailed logging
+docker run -p 8080:8080 -e ENABLE_DETAILED_LOGGING=false image-insights-api
+
+# Or with docker-compose
+docker compose up -d -e ENABLE_DETAILED_LOGGING=false
+```
 
 ## 🧪 Testing
 
