@@ -70,8 +70,7 @@ app.add_middleware(
 async def global_exception_handler(request: Request, exc: Exception):
     """Handle unexpected exceptions."""
     return JSONResponse(
-        status_code=500,
-        content={"error": "Internal server error", "details": str(exc)}
+        status_code=500, content={"error": "Internal server error", "details": str(exc)}
     )
 
 
@@ -82,18 +81,10 @@ app.include_router(image_analysis_router)
 @app.get("/", tags=["health"])
 async def root():
     """Health check endpoint."""
-    return {
-        "service": "image-analysis-api",
-        "version": "1.0.0",
-        "status": "healthy"
-    }
+    return {"service": "image-analysis-api", "version": "1.0.0", "status": "healthy"}
 
 
 @app.get("/health", tags=["health"])
 async def health_check():
     """Detailed health check endpoint."""
-    return {
-        "status": "healthy",
-        "service": "image-analysis-api",
-        "version": "1.0.0"
-    }
+    return {"status": "healthy", "service": "image-analysis-api", "version": "1.0.0"}
