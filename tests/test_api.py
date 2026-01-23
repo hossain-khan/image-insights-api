@@ -224,7 +224,31 @@ class TestDeterminism:
 
         assert response1.status_code == 200
         assert response2.status_code == 200
-        assert response1.json() == response2.json()
+        
+        # Compare responses excluding processing_time_ms which varies per request
+        data1 = response1.json()
+        data2 = response2.json()
+        data1.pop("processing_time_ms", None)
+        data2.pop("processing_time_ms", None)
+        assert data1 == data2
+
+    def test_response_includes_processing_time(self, client, white_image):
+        """Test that response includes processing_time_ms field."""
+        response = client.post(
+            "/v1/image/analysis?metrics=brightness",
+            files={"image": ("test.png", white_image, "image/png")},
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        
+        # Verify processing_time_ms is present
+        assert "processing_time_ms" in data
+        assert isinstance(data["processing_time_ms"], (int, float))
+        
+        # Processing time should be non-negative and reasonable (< 10 seconds)
+        assert data["processing_time_ms"] >= 0
+        assert data["processing_time_ms"] < 10000
 
 
 class TestRec709Algorithm:
