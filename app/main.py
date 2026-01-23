@@ -21,13 +21,25 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler."""
     # Startup
+    logger.info("=" * 80)
+    logger.info("🚀 Image Insights API Starting")
+    logger.info(f"   Version: {__version__}")
+    logger.info(f"   Title: {app.title}")
+    logger.info(f"   Docs: http://localhost:8080/docs")
+    logger.info(f"   Health: http://localhost:8080/health")
+    logger.info(f"   Algorithm: Rec. 709 (ITU-R BT.709) luminance")
+    logger.info("=" * 80)
     yield
     # Shutdown
+    logger.info("🛑 Image Insights API Shutting Down")
+
 
 
 app = FastAPI(
