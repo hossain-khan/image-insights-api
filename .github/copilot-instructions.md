@@ -91,6 +91,11 @@ This version is automatically used in:
 - Health check endpoints (`GET /` and `GET /health`)
 - Docker image tags (via GitHub Actions release workflow)
 
+**⚠️ IMPORTANT: When updating the version, also update these files:**
+
+1. **`docs/swagger.json`** - Update the `"version"` field in the `"info"` section (line ~6)
+2. **`docs/API_DOC.md`** - Update health check response examples to reflect the new version (lines ~11, ~20)
+
 **To update the version:**
 
 1. Edit `app/__version__.py` and update `__version__`:
@@ -99,9 +104,16 @@ This version is automatically used in:
    echo '__version__ = "1.1.0"' > app/__version__.py
    ```
 
-2. Commit the change:
+2. Update `docs/swagger.json`:
+   ```json
+   "version": "1.1.0"
+   ```
+
+3. Update `docs/API_DOC.md` health check examples with the new version
+
+4. Commit all changes:
    ```bash
-   git add app/__version__.py
+   git add app/__version__.py docs/swagger.json docs/API_DOC.md
    git commit -m "chore: bump version to 1.1.0"
    ```
 
