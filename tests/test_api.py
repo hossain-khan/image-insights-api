@@ -596,3 +596,42 @@ class TestImageAnalysisUrlEndpoint:
         assert response.status_code == 400
         data = response.json()
         assert "error" in data["detail"]
+
+
+class TestUrlEndpointSSRFProtection:
+    """Test SSRF protection in URL endpoint."""
+
+    def test_url_endpoint_blocks_localhost(self, client):
+        """Test URL endpoint blocks localhost URLs."""
+        for url in ["http://localhost/image.png", "http://127.0.0.1/image.png"]:
+            response = client.post("/v1/image/analysis/url", json={"url": url})
+            assert response.status_code == 400
+            data = response.json()
+            assert "private or local" in data["detail"]["detail"].lower()
+
+    def test_url_endpoint_blocks_private_ips(self, client):
+        """Test URL endpoint blocks private IP addresses."""
+        private_urls = [
+            "http://192.168.1.1/image.png",
+            "http://10.0.0.1/image.png",
+            "http://172.16.0.1/image.png",
+        ]
+        for url in private_urls:
+            response = client.post("/v1/image/analysis/url", json={"url": url})
+            assert response.status_code == 400
+            data = response.json()
+            assert "private or local" in data["detail"]["detail"].lower()
+
+    def test_url_endpoint_allows_public_domains(self, client, httpx_mock, create_test_image):
+        """Test URL endpoint allows public domain URLs."""
+        test_image = create_test_image((128, 128, 128)).getvalue()
+        httpx_mock.add_response(
+            url="https://example.com/image.png",
+            content=test_image,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/image.png"}
+        )
+        assert response.status_code == 200
