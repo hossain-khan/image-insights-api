@@ -207,7 +207,7 @@ async def analyze_image(
     elapsed_time = time.time() - start_time
     processing_time_ms = round(elapsed_time * 1000, 2)
     response["processing_time_ms"] = processing_time_ms
-    
+
     if settings.ENABLE_DETAILED_LOGGING:
         metrics_used = ", ".join(requested_metrics)
         edge_info = f", Edge mode: {validated_edge_mode}" if validated_edge_mode else ""
@@ -273,7 +273,7 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     elapsed_time = time.time() - start_time
     processing_time_ms = round(elapsed_time * 1000, 2)
     response["processing_time_ms"] = processing_time_ms
-    
+
     if settings.ENABLE_DETAILED_LOGGING:
         metrics_used = ", ".join(requested_metrics)
         edge_info = f", Edge mode: {validated_edge_mode}" if validated_edge_mode else ""

@@ -224,7 +224,7 @@ class TestDeterminism:
 
         assert response1.status_code == 200
         assert response2.status_code == 200
-        
+
         # Compare responses excluding processing_time_ms which varies per request
         data1 = response1.json()
         data2 = response2.json()
@@ -241,11 +241,11 @@ class TestDeterminism:
 
         assert response.status_code == 200
         data = response.json()
-        
+
         # Verify processing_time_ms is present
         assert "processing_time_ms" in data
         assert isinstance(data["processing_time_ms"], (int, float))
-        
+
         # Processing time should be non-negative and reasonable (< 10 seconds)
         assert data["processing_time_ms"] >= 0
         assert data["processing_time_ms"] < 10000
