@@ -1,5 +1,5 @@
 """
-Image Analysis API
+Image Insights API
 
 A stateless REST microservice that provides fast, deterministic image analysis metrics.
 Supports brightness analysis using Rec. 709 perceptual luminance formula.
@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Image Analysis API",
+    title="Image Insights API",
     description="""
 A lightweight, fast, and portable REST API for image analysis.
 
@@ -81,10 +81,10 @@ app.include_router(image_analysis_router)
 @app.get("/", tags=["health"])
 async def root():
     """Health check endpoint."""
-    return {"service": "image-analysis-api", "version": "1.0.0", "status": "healthy"}
+    return {"service": "image-insights-api", "version": "1.0.0", "status": "healthy"}
 
 
 @app.get("/health", tags=["health"])
 async def health_check():
     """Detailed health check endpoint."""
-    return {"status": "healthy", "service": "image-analysis-api", "version": "1.0.0"}
+    return {"status": "healthy", "service": "image-insights-api", "version": "1.0.0"}

@@ -2,8 +2,8 @@
 
 ## 1. Overview
 
-**Product Name:** Image Analysis API
-**Repository:** `image-analysis-api`
+**Product Name:** Image Insights API
+**Repository:** `image-insights-api`
 **Type:** Stateless REST microservice
 **Deployment:** Docker / OCI-compatible runtime
 

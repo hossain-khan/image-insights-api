@@ -1,11 +1,11 @@
 version: "3.8"
 
 services:
-  image-analysis-api:
+  image-insights-api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: image-analysis-api
+    container_name: image-insights-api
     ports:
       - "8080:8080"
     restart: unless-stopped

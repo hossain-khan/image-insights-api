@@ -12,7 +12,7 @@ class TestHealthEndpoints:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "healthy"
-        assert data["service"] == "image-analysis-api"
+        assert data["service"] == "image-insights-api"
 
     def test_health_endpoint(self, client):
         """Test health check endpoint."""

@@ -1,12 +1,12 @@
 [project]
-name = "image-analysis-api"
+name = "image-insights-api"
 version = "1.0.0"
 description = "A lightweight REST API for image brightness analysis"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
-    {name = "Image Analysis API Team"}
+    {name = "Image Insights API Team"}
 ]
 keywords = ["image", "analysis", "brightness", "api", "fastapi"]
 classifiers = [
