@@ -385,3 +385,253 @@ class TestEdgeMode:
         assert "edge_brightness_score" not in data
         assert "edge_average_luminance" not in data
         assert "edge_mode" not in data
+
+
+class TestImageAnalysisUrlEndpoint:
+    """Test POST /v1/image/analysis/url endpoint."""
+
+    @staticmethod
+    def _image_to_bytes(image_buffer):
+        """Convert BytesIO buffer to bytes for httpx_mock."""
+        return image_buffer.getvalue()
+
+    def test_analyze_image_from_valid_url(self, client, httpx_mock, create_test_image):
+        """Test analysis of image from a valid URL."""
+        # Mock the HTTP request
+        test_image = self._image_to_bytes(create_test_image((128, 128, 128)))
+        httpx_mock.add_response(
+            url="https://example.com/test.png",
+            content=test_image,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/test.png"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "brightness_score" in data
+        assert "average_luminance" in data
+        assert data["algorithm"] == "rec709"
+        assert "width" in data
+        assert "height" in data
+
+    def test_analyze_black_image_from_url(self, client, httpx_mock, create_test_image):
+        """Test analysis of pure black image from URL returns brightness 0."""
+        test_image = self._image_to_bytes(create_test_image((0, 0, 0)))
+        httpx_mock.add_response(
+            url="https://example.com/black.png",
+            content=test_image,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/black.png"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["brightness_score"] == 0
+        assert data["average_luminance"] == 0.0
+
+    def test_analyze_white_image_from_url(self, client, httpx_mock, create_test_image):
+        """Test analysis of pure white image from URL returns brightness 100."""
+        test_image = self._image_to_bytes(create_test_image((255, 255, 255)))
+        httpx_mock.add_response(
+            url="https://example.com/white.png",
+            content=test_image,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/white.png"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["brightness_score"] == 100
+        assert data["average_luminance"] == 255.0
+
+    def test_analyze_jpeg_from_url(self, client, httpx_mock, create_test_image):
+        """Test analysis works with JPEG from URL."""
+        test_image = self._image_to_bytes(create_test_image((128, 128, 128), format="JPEG"))
+        httpx_mock.add_response(
+            url="https://example.com/test.jpg",
+            content=test_image,
+            headers={"content-type": "image/jpeg"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/test.jpg"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "brightness_score" in data
+
+    def test_url_endpoint_with_metrics_parameter(self, client, httpx_mock, create_test_image):
+        """Test URL endpoint with metrics parameter."""
+        test_image = self._image_to_bytes(create_test_image((128, 128, 128)))
+        httpx_mock.add_response(
+            url="https://example.com/test.png",
+            content=test_image,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url",
+            json={"url": "https://example.com/test.png", "metrics": "brightness,median,histogram"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "brightness_score" in data
+        assert "median_luminance" in data
+        assert "histogram" in data
+
+    def test_url_endpoint_with_edge_mode(self, client, httpx_mock, create_test_image):
+        """Test URL endpoint with edge mode parameter."""
+        test_image = self._image_to_bytes(create_test_image((128, 128, 128)))
+        httpx_mock.add_response(
+            url="https://example.com/test.png",
+            content=test_image,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url",
+            json={"url": "https://example.com/test.png", "edge_mode": "left_right"},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "edge_brightness_score" in data
+        assert "edge_average_luminance" in data
+        assert data["edge_mode"] == "left_right"
+
+    def test_url_endpoint_empty_url(self, client):
+        """Test URL endpoint with empty URL returns 400."""
+        response = client.post("/v1/image/analysis/url", json={"url": ""})
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data["detail"]
+
+    def test_url_endpoint_invalid_scheme(self, client):
+        """Test URL endpoint with invalid scheme returns 400."""
+        response = client.post("/v1/image/analysis/url", json={"url": "ftp://example.com/test.png"})
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data["detail"]
+        assert "scheme" in data["detail"]["error"].lower()
+
+    def test_url_endpoint_download_failure(self, client, httpx_mock):
+        """Test URL endpoint handles download failure."""
+        httpx_mock.add_response(url="https://example.com/test.png", status_code=404)
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/test.png"}
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data["detail"]
+
+    def test_url_endpoint_unsupported_content_type(self, client, httpx_mock):
+        """Test URL endpoint rejects unsupported content types."""
+        httpx_mock.add_response(
+            url="https://example.com/test.gif",
+            content=b"fake gif content",
+            headers={"content-type": "image/gif"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/test.gif"}
+        )
+        assert response.status_code == 415
+        data = response.json()
+        assert "error" in data["detail"]
+
+    def test_url_endpoint_file_too_large(self, client, httpx_mock):
+        """Test URL endpoint rejects files larger than 5MB."""
+        # Create content larger than 5MB
+        large_content = b"x" * (6 * 1024 * 1024)
+        httpx_mock.add_response(
+            url="https://example.com/large.png",
+            content=large_content,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/large.png"}
+        )
+        assert response.status_code == 413
+        data = response.json()
+        assert "error" in data["detail"]
+
+    def test_url_endpoint_invalid_metrics(self, client):
+        """Test URL endpoint with invalid metrics."""
+        response = client.post(
+            "/v1/image/analysis/url",
+            json={"url": "https://example.com/test.png", "metrics": "invalid_metric"},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data["detail"]
+
+    def test_url_endpoint_invalid_edge_mode(self, client):
+        """Test URL endpoint with invalid edge mode."""
+        response = client.post(
+            "/v1/image/analysis/url",
+            json={"url": "https://example.com/test.png", "edge_mode": "invalid_mode"},
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data["detail"]
+
+    def test_url_endpoint_corrupted_image(self, client, httpx_mock):
+        """Test URL endpoint handles corrupted image data."""
+        httpx_mock.add_response(
+            url="https://example.com/corrupted.png",
+            content=b"not a valid image",
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/corrupted.png"}
+        )
+        assert response.status_code == 400
+        data = response.json()
+        assert "error" in data["detail"]
+
+
+class TestUrlEndpointSSRFProtection:
+    """Test SSRF protection in URL endpoint."""
+
+    def test_url_endpoint_blocks_localhost(self, client):
+        """Test URL endpoint blocks localhost URLs."""
+        for url in ["http://localhost/image.png", "http://127.0.0.1/image.png"]:
+            response = client.post("/v1/image/analysis/url", json={"url": url})
+            assert response.status_code == 400
+            data = response.json()
+            assert "private or local" in data["detail"]["detail"].lower()
+
+    def test_url_endpoint_blocks_private_ips(self, client):
+        """Test URL endpoint blocks private IP addresses."""
+        private_urls = [
+            "http://192.168.1.1/image.png",
+            "http://10.0.0.1/image.png",
+            "http://172.16.0.1/image.png",
+        ]
+        for url in private_urls:
+            response = client.post("/v1/image/analysis/url", json={"url": url})
+            assert response.status_code == 400
+            data = response.json()
+            assert "private or local" in data["detail"]["detail"].lower()
+
+    def test_url_endpoint_allows_public_domains(self, client, httpx_mock, create_test_image):
+        """Test URL endpoint allows public domain URLs."""
+        test_image = create_test_image((128, 128, 128)).getvalue()
+        httpx_mock.add_response(
+            url="https://example.com/image.png",
+            content=test_image,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/image.png"}
+        )
+        assert response.status_code == 200
