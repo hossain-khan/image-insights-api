@@ -95,13 +95,13 @@ jobs:
           context: .
           load: true
           push: false
-          tags: image-analysis-api:test
+          tags: image-insights-api:test
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
       - name: Test Docker image
         run: |
-          docker run -d --name test-container -p 8080:8080 image-analysis-api:test
+          docker run -d --name test-container -p 8080:8080 image-insights-api:test
           sleep 5
           curl -f http://localhost:8080/health || exit 1
           docker stop test-container

@@ -21,10 +21,10 @@ A lightweight, containerized REST API that analyzes JPEG and PNG images and retu
 
 ```bash
 # Build the image
-docker build -t image-analysis-api .
+docker build -t image-insights-api .
 
 # Run the container
-docker run -p 8080:8080 image-analysis-api
+docker run -p 8080:8080 image-insights-api
 ```
 
 Or use Docker Compose:
@@ -164,7 +164,7 @@ pytest --cov=app --cov-report=html
 ## 📁 Project Structure
 
 ```
-image-analysis-api/
+image-insights-api/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py              # FastAPI application
