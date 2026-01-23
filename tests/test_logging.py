@@ -1,15 +1,7 @@
 """Tests for detailed application logging functionality."""
 
 import logging
-import os
-import sys
 import time
-from unittest.mock import patch
-
-import pytest
-
-# Import to ensure we can reload the config module
-import app.config
 
 
 class TestLoggingWhenEnabled:
@@ -36,7 +28,9 @@ class TestLoggingWhenEnabled:
             )
 
         log_messages = [record.message for record in caplog.records]
-        assert any("photo.jpg" in msg and "Image analysis request started" in msg for msg in log_messages)
+        assert any(
+            "photo.jpg" in msg and "Image analysis request started" in msg for msg in log_messages
+        )
 
     def test_logs_request_start_with_metrics(self, client, white_image, caplog):
         """Test that request start log includes requested metrics."""
@@ -175,8 +169,7 @@ class TestLoggingLogLevels:
             )
 
         error_logs = [
-            record for record in caplog.records
-            if record.levelname in ["ERROR", "CRITICAL"]
+            record for record in caplog.records if record.levelname in ["ERROR", "CRITICAL"]
         ]
         assert len(error_logs) == 0
 
@@ -193,7 +186,9 @@ class TestLogMessageContent:
             )
 
         completion_logs = [
-            record.message for record in caplog.records if "Image analysis completed" in record.message
+            record.message
+            for record in caplog.records
+            if "Image analysis completed" in record.message
         ]
         assert len(completion_logs) > 0
 
@@ -216,7 +211,9 @@ class TestLogMessageContent:
                 files={"image": ("test.png", white_image, "image/png")},
             )
 
-        file_logs = [record.message for record in caplog.records if "File validated" in record.message]
+        file_logs = [
+            record.message for record in caplog.records if "File validated" in record.message
+        ]
         assert len(file_logs) > 0
 
         # Check that size is in MB format
@@ -235,7 +232,9 @@ class TestLogMessageContent:
             )
 
         completion_logs = [
-            record.message for record in caplog.records if "Image analysis completed" in record.message
+            record.message
+            for record in caplog.records
+            if "Image analysis completed" in record.message
         ]
         assert len(completion_logs) > 0
 
@@ -271,7 +270,9 @@ class TestLoggingPerformance:
             )
 
         completion_logs = [
-            record.message for record in caplog.records if "Image analysis completed" in record.message
+            record.message
+            for record in caplog.records
+            if "Image analysis completed" in record.message
         ]
         assert len(completion_logs) > 0
 
