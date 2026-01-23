@@ -1,6 +1,7 @@
 """Tests for core modules."""
 
 import numpy as np
+import pytest
 from PIL import Image
 
 from app.config import settings
@@ -219,7 +220,7 @@ class TestEdgeLuminance:
         """Test invalid edge mode raises ValueError."""
         luminance = np.zeros((100, 100), dtype=np.float64)
 
-        with np.testing.assert_raises(ValueError):
+        with pytest.raises(ValueError):
             calculate_edge_luminance(luminance, "invalid_mode")
 
     def test_edge_luminance_small_image(self):
