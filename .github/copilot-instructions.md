@@ -109,18 +109,42 @@ This version is automatically used in:
 
 ### Release Process
 
-1. **Update version** in `app/__version__.py` (if not already done)
+**Step 1: Create a release branch**
+```bash
+git checkout -b release/v1.2.0
+```
 
-2. **Create a release tag** following semantic versioning:
-   ```bash
-   git tag -a v1.1.0 -m "Release v1.1.0 - Add detailed logging with toggle"
-   git push origin v1.1.0
-   ```
+**Step 2: Update the version** in `app/__version__.py`:
+```python
+__version__ = "1.2.0"
+```
 
-3. **GitHub Actions will automatically**:
-   - Build multi-platform Docker images (amd64, arm64)
-   - Push to GitHub Container Registry (`ghcr.io/hossain-khan/image-insights-api:1.1.0`)
-   - Create a GitHub Release with auto-generated changelog
+**Step 3: Commit the version bump**
+```bash
+git add app/__version__.py
+git commit -m "chore: bump version to 1.2.0"
+```
+
+**Step 4: Push the release branch and create a pull request**
+```bash
+git push origin release/v1.2.0
+```
+Then create a PR for review before merging to main.
+
+**Step 5: After PR is merged, create the release tag** on main following semantic versioning:
+```bash
+git checkout main
+git pull origin main
+git tag -a v1.2.0 -m "Release v1.2.0 - Add edge-based brightness analysis"
+git push origin v1.2.0
+```
+
+**Step 6: GitHub Actions will automatically**:
+- Build multi-platform Docker images (amd64, arm64)
+- Push to GitHub Container Registry (`ghcr.io/hossain-khan/image-insights-api:1.2.0`)
+- Create a GitHub Release with auto-generated changelog
+
+**Release Branch Naming Convention:** `release/v<MAJOR>.<MINOR>.<PATCH>`
 
 ### Version Examples
 
