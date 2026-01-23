@@ -1,7 +1,7 @@
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)
-![GHCR](https://img.shields.io/badge/ghcr.io-image--insights--api-blue?logo=github&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688?logo=fastapi&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://github.com/hossain-khan/image-insights-api/pkgs/container/image-insights-api)
+[![GHCR](https://img.shields.io/badge/ghcr.io-image--insights--api-blue?logo=github&logoColor=white)](https://github.com/hossain-khan/image-insights-api/pkgs/container/image-insights-api)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688?logo=fastapi&logoColor=white)](https://github.com/hossain-khan/image-insights-api/releases)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)](https://github.com/hossain-khan/image-insights-api/releases)
 
 # 🖼️ Image Insights API
 
