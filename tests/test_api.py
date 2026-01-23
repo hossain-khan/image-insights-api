@@ -621,6 +621,30 @@ class TestImageAnalysisUrlEndpoint:
         data = response.json()
         assert "error" in data["detail"]
 
+    def test_url_endpoint_includes_processing_time(self, client, httpx_mock, create_test_image):
+        """Test that URL endpoint response includes processing_time_ms field."""
+        test_image = self._image_to_bytes(create_test_image((255, 255, 255)))
+        httpx_mock.add_response(
+            url="https://example.com/white.png",
+            content=test_image,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/white.png"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify processing_time_ms is present
+        assert "processing_time_ms" in data
+        assert isinstance(data["processing_time_ms"], (int, float))
+
+        # Processing time should be non-negative and reasonable (< 10 seconds)
+        assert data["processing_time_ms"] >= 0
+        assert data["processing_time_ms"] < 10000
+
 
 class TestUrlEndpointSSRFProtection:
     """Test SSRF protection in URL endpoint."""
