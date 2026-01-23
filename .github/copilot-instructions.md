@@ -75,17 +75,51 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/).
 | **MINOR** | New features, backward-compatible additions | `1.0.0` → `1.1.0` |
 | **PATCH** | Bug fixes, documentation, backward-compatible fixes | `1.0.0` → `1.0.1` |
 
-### Release Process
+### Centralized Version Management
 
-1. **Create a release tag** following semantic versioning:
+The version is managed in a single location:
+
+**File**: `app/__version__.py`
+```python
+"""Version information for Image Insights API."""
+
+__version__ = "1.1.0"
+```
+
+This version is automatically used in:
+- FastAPI documentation (OpenAPI spec)
+- Health check endpoints (`GET /` and `GET /health`)
+- Docker image tags (via GitHub Actions release workflow)
+
+**To update the version:**
+
+1. Edit `app/__version__.py` and update `__version__`:
    ```bash
-   git tag -a v1.2.0 -m "Release v1.2.0 - Description of changes"
-   git push origin v1.2.0
+   # Example: bumping from 1.0.0 to 1.1.0
+   echo '__version__ = "1.1.0"' > app/__version__.py
    ```
 
-2. **GitHub Actions will automatically**:
+2. Commit the change:
+   ```bash
+   git add app/__version__.py
+   git commit -m "chore: bump version to 1.1.0"
+   ```
+
+3. Create and push the release tag (see Release Process below)
+
+### Release Process
+
+1. **Update version** in `app/__version__.py` (if not already done)
+
+2. **Create a release tag** following semantic versioning:
+   ```bash
+   git tag -a v1.1.0 -m "Release v1.1.0 - Add detailed logging with toggle"
+   git push origin v1.1.0
+   ```
+
+3. **GitHub Actions will automatically**:
    - Build multi-platform Docker images (amd64, arm64)
-   - Push to GitHub Container Registry (`ghcr.io/hossain-khan/image-insights-api`)
+   - Push to GitHub Container Registry (`ghcr.io/hossain-khan/image-insights-api:1.1.0`)
    - Create a GitHub Release with auto-generated changelog
 
 ### Version Examples
