@@ -1,0 +1,297 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Image Insights API",
+    "description": "A lightweight REST API for image brightness analysis using Rec. 709 perceptual luminance.\n\n## Features\n- Brightness scoring (0-100)\n- Median luminance calculation\n- Histogram distribution analysis\n\n## Algorithm\nUses ITU-R BT.709 standard: `L = 0.2126R + 0.7152G + 0.0722B`",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Image Insights API Team"
+    },
+    "license": {
+      "name": "MIT"
+    }
+  },
+  "host": "localhost:8080",
+  "basePath": "/",
+  "schemes": ["http"],
+  "consumes": ["multipart/form-data"],
+  "produces": ["application/json"],
+  "tags": [
+    {
+      "name": "health",
+      "description": "Health check endpoints"
+    },
+    {
+      "name": "image-analysis",
+      "description": "Image analysis endpoints"
+    }
+  ],
+  "paths": {
+    "/": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Root health check",
+        "description": "Basic health check endpoint",
+        "operationId": "root",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "schema": {
+              "$ref": "#/definitions/HealthResponse"
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": ["health"],
+        "summary": "Detailed health check",
+        "description": "Detailed health check endpoint",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "schema": {
+              "$ref": "#/definitions/HealthResponse"
+            }
+          }
+        }
+      }
+    },
+    "/v1/image/analysis": {
+      "post": {
+        "tags": ["image-analysis"],
+        "summary": "Analyze image brightness",
+        "description": "Analyze an image and return brightness metrics using Rec. 709 perceptual luminance.\n\n**Metrics:**\n- `brightness`: Brightness score (0-100) and average luminance (default)\n- `median`: Median luminance value\n- `histogram`: Distribution across 10 luminance buckets",
+        "operationId": "analyzeImage",
+        "consumes": ["multipart/form-data"],
+        "parameters": [
+          {
+            "name": "image",
+            "in": "formData",
+            "description": "JPEG or PNG image file to analyze",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "name": "metrics",
+            "in": "query",
+            "description": "Comma-separated list of metrics to return. Options: brightness, median, histogram. Default: brightness",
+            "required": false,
+            "type": "string",
+            "default": "brightness"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful analysis",
+            "schema": {
+              "$ref": "#/definitions/AnalysisResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid image or metrics",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "413": {
+            "description": "Payload too large - File exceeds 5MB limit",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "415": {
+            "description": "Unsupported media type - Only JPEG and PNG allowed",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity - Missing required field",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "HealthResponse": {
+      "type": "object",
+      "required": ["service", "version", "status"],
+      "properties": {
+        "service": {
+          "type": "string",
+          "example": "image-insights-api"
+        },
+        "version": {
+          "type": "string",
+          "example": "1.0.0"
+        },
+        "status": {
+          "type": "string",
+          "example": "healthy"
+        }
+      }
+    },
+    "AnalysisResponse": {
+      "type": "object",
+      "required": ["width", "height", "algorithm"],
+      "properties": {
+        "brightness_score": {
+          "type": "integer",
+          "description": "Brightness score from 0 (black) to 100 (white)",
+          "minimum": 0,
+          "maximum": 100,
+          "example": 73
+        },
+        "average_luminance": {
+          "type": "number",
+          "format": "float",
+          "description": "Average luminance value (0-255)",
+          "minimum": 0,
+          "maximum": 255,
+          "example": 186.3
+        },
+        "median_luminance": {
+          "type": "number",
+          "format": "float",
+          "description": "Median luminance value (0-255)",
+          "minimum": 0,
+          "maximum": 255,
+          "example": 172.4
+        },
+        "histogram": {
+          "type": "array",
+          "description": "Distribution of luminance values across 10 buckets",
+          "items": {
+            "$ref": "#/definitions/HistogramBucket"
+          }
+        },
+        "width": {
+          "type": "integer",
+          "description": "Original image width in pixels",
+          "example": 1920
+        },
+        "height": {
+          "type": "integer",
+          "description": "Original image height in pixels",
+          "example": 1080
+        },
+        "algorithm": {
+          "type": "string",
+          "description": "Algorithm used for luminance calculation",
+          "enum": ["rec709"],
+          "example": "rec709"
+        }
+      }
+    },
+    "HistogramBucket": {
+      "type": "object",
+      "required": ["range", "percent"],
+      "properties": {
+        "range": {
+          "type": "string",
+          "description": "Luminance range for this bucket",
+          "example": "0-25"
+        },
+        "percent": {
+          "type": "number",
+          "format": "float",
+          "description": "Percentage of pixels in this range",
+          "minimum": 0,
+          "maximum": 100,
+          "example": 2.1
+        }
+      }
+    },
+    "ErrorResponse": {
+      "type": "object",
+      "properties": {
+        "detail": {
+          "type": "object",
+          "properties": {
+            "error": {
+              "type": "string",
+              "description": "Error message",
+              "example": "Unsupported image type"
+            },
+            "allowed_types": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": ["image/jpeg", "image/png"]
+            },
+            "received_type": {
+              "type": "string",
+              "example": "image/gif"
+            },
+            "max_size_bytes": {
+              "type": "integer",
+              "example": 5242880
+            },
+            "received_size_bytes": {
+              "type": "integer",
+              "example": 6291456
+            },
+            "invalid_metrics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "valid_metrics": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "example": ["brightness", "median", "histogram"]
+            },
+            "details": {
+              "type": "string",
+              "description": "Additional error details"
+            }
+          }
+        }
+      }
+    },
+    "ValidationErrorResponse": {
+      "type": "object",
+      "properties": {
+        "detail": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "example": "missing"
+              },
+              "loc": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "example": ["body", "image"]
+              },
+              "msg": {
+                "type": "string",
+                "example": "Field required"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
