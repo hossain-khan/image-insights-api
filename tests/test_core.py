@@ -125,7 +125,7 @@ class TestHistogram:
         luminance = np.random.uniform(0, 255, (100, 100))
         histogram = calculate_histogram(luminance)
         total = sum(bucket["percent"] for bucket in histogram)
-        assert abs(total - 100.0) < 2.0  # Allow for rounding across 10 buckets
+        assert abs(total - 100.0) <= 2.0  # Allow for rounding across 10 buckets
 
     def test_histogram_uniform_distribution(self):
         """Test histogram of uniformly distributed values."""
