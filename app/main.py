@@ -32,14 +32,13 @@ async def lifespan(app: FastAPI):
     logger.info("🚀 Image Insights API Starting")
     logger.info(f"   Version: {__version__}")
     logger.info(f"   Title: {app.title}")
-    logger.info(f"   Docs: http://localhost:8080/docs")
-    logger.info(f"   Health: http://localhost:8080/health")
-    logger.info(f"   Algorithm: Rec. 709 (ITU-R BT.709) luminance")
+    logger.info("   Docs: http://localhost:8080/docs")
+    logger.info("   Health: http://localhost:8080/health")
+    logger.info("   Algorithm: Rec. 709 (ITU-R BT.709) luminance")
     logger.info("=" * 80)
     yield
     # Shutdown
     logger.info("🛑 Image Insights API Shutting Down")
-
 
 
 app = FastAPI(
