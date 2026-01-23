@@ -192,6 +192,13 @@
           "description": "Algorithm used for luminance calculation",
           "enum": ["rec709"],
           "example": "rec709"
+        },
+        "processing_time_ms": {
+          "type": "number",
+          "format": "float",
+          "description": "Time taken to process the image in milliseconds",
+          "minimum": 0,
+          "example": 0.45
         }
       }
     },
