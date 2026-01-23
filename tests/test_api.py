@@ -595,8 +595,9 @@ class TestImageAnalysisUrlEndpoint:
     @staticmethod
     def _create_test_png(color: tuple[int, int, int], size: tuple[int, int] = (100, 100)) -> bytes:
         """Create a test PNG image."""
-        from PIL import Image
         import io
+
+        from PIL import Image
 
         img = Image.new("RGB", size, color)
         buffer = io.BytesIO()
@@ -606,8 +607,9 @@ class TestImageAnalysisUrlEndpoint:
     @staticmethod
     def _create_test_jpeg(color: tuple[int, int, int], size: tuple[int, int] = (100, 100)) -> bytes:
         """Create a test JPEG image."""
-        from PIL import Image
         import io
+
+        from PIL import Image
 
         img = Image.new("RGB", size, color)
         buffer = io.BytesIO()
