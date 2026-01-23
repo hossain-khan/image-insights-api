@@ -30,6 +30,8 @@ services:
       - "8080:8080"
     environment:
       - LOG_LEVEL=info
+      # Set to 'false' to disable detailed application logging (default: true)
+      # - ENABLE_DETAILED_LOGGING=false
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]

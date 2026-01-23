@@ -156,6 +156,25 @@ When making changes, respect these constraints:
 | Max dimension | 512 px (auto-resized) |
 | Response time target | < 100ms |
 
+## Environment Variables
+
+Configure the API using environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ENABLE_DETAILED_LOGGING` | `true` | Enable detailed application logging with request info, file details, processing times, and dimensions |
+
+**Usage:**
+
+```bash
+# Disable detailed logging for production
+docker run -e ENABLE_DETAILED_LOGGING=false image-insights-api
+
+# Or in docker-compose.yml
+environment:
+  - ENABLE_DETAILED_LOGGING=false
+```
+
 ## Dependencies
 
 - Keep dependencies minimal
