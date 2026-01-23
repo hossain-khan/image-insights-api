@@ -13,10 +13,12 @@ from app.config import settings
 from app.core import (
     calculate_average_luminance,
     calculate_brightness_score,
+    calculate_edge_luminance,
     calculate_histogram,
     calculate_luminance,
     calculate_median_luminance,
     resize_image_if_needed,
+    validate_edge_mode,
     validate_image_upload,
     validate_metrics,
 )
@@ -33,6 +35,12 @@ async def analyze_image(
         str | None,
         Query(description="Comma-separated metrics: brightness, median, histogram"),
     ] = None,
+    edge_mode: Annotated[
+        str | None,
+        Query(
+            description="Edge-based brightness mode: left_right, top_bottom, or all (analyzes 10% of edges)"
+        ),
+    ] = None,
 ) -> dict[str, Any]:
     """
     Analyze an image and return requested metrics.
@@ -42,6 +50,13 @@ async def analyze_image(
     - `median`: Median luminance value
     - `histogram`: Distribution of luminance values in 10 buckets
 
+    **Edge Mode:**
+    - `left_right`: Analyze brightness of left and right edges (10% each)
+    - `top_bottom`: Analyze brightness of top and bottom edges (10% each)
+    - `all`: Analyze brightness of all four edges (10% each)
+
+    Edge mode is useful for determining background colors that blend well with image edges.
+
     **Algorithm:** Rec. 709 perceptual luminance formula
 
     Returns deterministic results for the same input image.
@@ -49,10 +64,16 @@ async def analyze_image(
     start_time = time.time()
 
     if settings.ENABLE_DETAILED_LOGGING:
-        logger.info(f"Image analysis request started - File: {image.filename}, Metrics: {metrics}")
+        logger.info(
+            f"Image analysis request started - File: {image.filename}, "
+            f"Metrics: {metrics}, Edge mode: {edge_mode}"
+        )
 
     # Validate metrics parameter
     requested_metrics = validate_metrics(metrics)
+
+    # Validate edge_mode parameter
+    validated_edge_mode = validate_edge_mode(edge_mode)
 
     # Validate and read image
     contents = await validate_image_upload(image)
@@ -102,6 +123,14 @@ async def analyze_image(
         response["brightness_score"] = calculate_brightness_score(avg_luminance)
         response["average_luminance"] = round(avg_luminance, 2)
 
+    # Edge-based brightness if requested
+    if validated_edge_mode:
+        edge_luminance_values = calculate_edge_luminance(luminance, validated_edge_mode)
+        edge_avg_luminance = float(edge_luminance_values.mean())
+        response["edge_brightness_score"] = calculate_brightness_score(edge_avg_luminance)
+        response["edge_average_luminance"] = round(edge_avg_luminance, 2)
+        response["edge_mode"] = validated_edge_mode
+
     # Median luminance
     if "median" in requested_metrics:
         response["median_luminance"] = round(calculate_median_luminance(luminance), 2)
@@ -119,8 +148,9 @@ async def analyze_image(
     elapsed_time = time.time() - start_time
     if settings.ENABLE_DETAILED_LOGGING:
         metrics_used = ", ".join(requested_metrics)
+        edge_info = f", Edge mode: {validated_edge_mode}" if validated_edge_mode else ""
         logger.info(
-            f"Image analysis completed - Metrics: {metrics_used}, "
+            f"Image analysis completed - Metrics: {metrics_used}{edge_info}, "
             f"Duration: {elapsed_time * 1000:.2f}ms, "
             f"Dimensions: {original_width}x{original_height}, "
             f"Algorithm: {settings.LUMINANCE_ALGORITHM}"

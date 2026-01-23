@@ -61,3 +61,74 @@ def calculate_brightness_score(average_luminance: float) -> int:
     """
     normalized = average_luminance / settings.LUMINANCE_MAX
     return round(normalized * 100)
+
+
+def calculate_edge_luminance(
+    luminance: NDArray[np.float64], edge_mode: str = "left_right"
+) -> NDArray[np.float64]:
+    """
+    Extract edge regions from luminance array based on edge mode.
+
+    Extracts 10% of the image from specified edges for brightness analysis.
+    This is useful for determining background colors that blend well with image edges.
+
+    Args:
+        luminance: 2D array of luminance values (height, width)
+        edge_mode: Which edges to extract ("left_right", "top_bottom", or "all")
+
+    Returns:
+        1D array of luminance values from the specified edges
+
+    Raises:
+        ValueError: If edge_mode is not valid
+    """
+    height, width = luminance.shape
+    edge_pixels = []
+
+    # Calculate 10% width and height for edge extraction
+    edge_width = max(1, int(width * 0.1))
+    edge_height = max(1, int(height * 0.1))
+
+    if edge_mode == "left_right":
+        # Left edge (10% from left)
+        left_edge = luminance[:, :edge_width]
+        edge_pixels.append(left_edge.flatten())
+
+        # Right edge (10% from right)
+        right_edge = luminance[:, -edge_width:]
+        edge_pixels.append(right_edge.flatten())
+
+    elif edge_mode == "top_bottom":
+        # Top edge (10% from top)
+        top_edge = luminance[:edge_height, :]
+        edge_pixels.append(top_edge.flatten())
+
+        # Bottom edge (10% from bottom)
+        bottom_edge = luminance[-edge_height:, :]
+        edge_pixels.append(bottom_edge.flatten())
+
+    elif edge_mode == "all":
+        # All four edges
+        # Left edge
+        left_edge = luminance[:, :edge_width]
+        edge_pixels.append(left_edge.flatten())
+
+        # Right edge
+        right_edge = luminance[:, -edge_width:]
+        edge_pixels.append(right_edge.flatten())
+
+        # Top edge (excluding corners already counted)
+        top_edge = luminance[:edge_height, edge_width:-edge_width]
+        edge_pixels.append(top_edge.flatten())
+
+        # Bottom edge (excluding corners already counted)
+        bottom_edge = luminance[-edge_height:, edge_width:-edge_width]
+        edge_pixels.append(bottom_edge.flatten())
+
+    else:
+        raise ValueError(
+            f"Invalid edge_mode '{edge_mode}'. Must be 'left_right', 'top_bottom', or 'all'"
+        )
+
+    # Concatenate all edge pixels
+    return np.concatenate(edge_pixels)
