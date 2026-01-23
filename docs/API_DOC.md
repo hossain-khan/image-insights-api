@@ -52,6 +52,7 @@ Analyze an image and return brightness metrics.
 |-----------|------|----------|----------|-------------|
 | `image` | file | form-data | Yes | JPEG or PNG image file |
 | `metrics` | string | query | No | Comma-separated list of metrics |
+| `edge_mode` | string | query | No | Edge-based brightness analysis mode |
 
 **Supported Metrics:**
 
@@ -60,6 +61,16 @@ Analyze an image and return brightness metrics.
 | `brightness` | Brightness score (0-100) and average luminance. **Default if not specified.** |
 | `median` | Median luminance value |
 | `histogram` | Distribution of luminance values across 10 buckets |
+
+**Edge Mode (Optional):**
+
+| Edge Mode | Description |
+|-----------|-------------|
+| `left_right` | Analyze brightness of left and right edges (10% of width each) |
+| `top_bottom` | Analyze brightness of top and bottom edges (10% of height each) |
+| `all` | Analyze brightness of all four edges (10% from each side) |
+
+Edge mode is useful for determining background colors that blend well with the image edges. When specified, returns `edge_brightness_score`, `edge_average_luminance`, and `edge_mode` in the response.
 
 ---
 
@@ -133,6 +144,95 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median,
 }
 ```
 
+### Edge-Based Brightness Analysis
+
+Edge mode analyzes the brightness of specific image edges to help determine background colors that blend well with the image.
+
+#### Left/Right Edge Analysis
+
+```bash
+curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=left_right" \
+  -F "image=@photo.jpg"
+```
+
+**Response:**
+```json
+{
+  "brightness_score": 73,
+  "average_luminance": 186.3,
+  "edge_brightness_score": 85,
+  "edge_average_luminance": 217.4,
+  "edge_mode": "left_right",
+  "width": 1920,
+  "height": 1080,
+  "algorithm": "rec709"
+}
+```
+
+#### Top/Bottom Edge Analysis
+
+```bash
+curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=top_bottom" \
+  -F "image=@photo.jpg"
+```
+
+**Response:**
+```json
+{
+  "brightness_score": 73,
+  "average_luminance": 186.3,
+  "edge_brightness_score": 92,
+  "edge_average_luminance": 234.6,
+  "edge_mode": "top_bottom",
+  "width": 1920,
+  "height": 1080,
+  "algorithm": "rec709"
+}
+```
+
+#### All Edges Analysis
+
+```bash
+curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
+  -F "image=@photo.jpg"
+```
+
+**Response:**
+```json
+{
+  "brightness_score": 73,
+  "average_luminance": 186.3,
+  "edge_brightness_score": 88,
+  "edge_average_luminance": 224.4,
+  "edge_mode": "all",
+  "width": 1920,
+  "height": 1080,
+  "algorithm": "rec709"
+}
+```
+
+#### Combining Edge Mode with Other Metrics
+
+```bash
+curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median&edge_mode=left_right" \
+  -F "image=@photo.jpg"
+```
+
+**Response:**
+```json
+{
+  "brightness_score": 73,
+  "average_luminance": 186.3,
+  "median_luminance": 172.4,
+  "edge_brightness_score": 85,
+  "edge_average_luminance": 217.4,
+  "edge_mode": "left_right",
+  "width": 1920,
+  "height": 1080,
+  "algorithm": "rec709"
+}
+```
+
 ### Python Example
 
 ```python
@@ -191,6 +291,14 @@ axios.post('http://localhost:8080/v1/image/analysis?metrics=brightness', form, {
 | `histogram[].range` | string | Luminance range (e.g., "0-25") |
 | `histogram[].percent` | float | Percentage of pixels in this range |
 
+### Edge-Based Brightness (when edge_mode is specified)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `edge_brightness_score` | integer | Brightness score (0-100) for the specified edges |
+| `edge_average_luminance` | float | Average luminance value (0-255) for the specified edges |
+| `edge_mode` | string | Edge mode used (`left_right`, `top_bottom`, or `all`) |
+
 ### Metadata (Always Included)
 
 | Field | Type | Description |
@@ -234,6 +342,18 @@ Invalid metrics requested.
     "error": "Invalid metrics requested",
     "invalid_metrics": ["invalid_metric"],
     "valid_metrics": ["brightness", "median", "histogram"]
+  }
+}
+```
+
+Invalid edge mode requested.
+
+```json
+{
+  "detail": {
+    "error": "Invalid edge_mode requested",
+    "received": "invalid_mode",
+    "valid_modes": ["left_right", "top_bottom", "all"]
   }
 }
 ```

@@ -10,6 +10,7 @@ A lightweight, containerized REST API that analyzes JPEG and PNG images and retu
 ## ✨ Features
 
 - **Brightness Analysis**: Perceptual brightness scoring (0-100) using Rec. 709 standard
+- **Edge-Based Brightness**: Analyze edges to determine optimal background colors that blend well
 - **Median Luminance**: Statistical median for images with extreme highlights/shadows
 - **Histogram**: Distribution analysis across 10 luminance buckets
 - **Fast & Lightweight**: < 100ms for typical images
@@ -94,6 +95,38 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median,
   -F "image=@photo.jpg"
 ```
 
+### Edge-Based Brightness
+
+Analyze image edges to determine background colors that blend well:
+
+```bash
+# Analyze left and right edges
+curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=left_right" \
+  -F "image=@photo.jpg"
+
+# Analyze top and bottom edges
+curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=top_bottom" \
+  -F "image=@photo.jpg"
+
+# Analyze all edges
+curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
+  -F "image=@photo.jpg"
+```
+
+**Edge Mode Response:**
+```json
+{
+  "brightness_score": 73,
+  "average_luminance": 186.3,
+  "edge_brightness_score": 85,
+  "edge_average_luminance": 217.4,
+  "edge_mode": "left_right",
+  "width": 1920,
+  "height": 1080,
+  "algorithm": "rec709"
+}
+```
+
 ### Full Response
 
 ```json
@@ -126,6 +159,16 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median,
 | `brightness` | Brightness score (0-100) and average luminance (default) |
 | `median` | Median luminance value |
 | `histogram` | Distribution across 10 luminance buckets |
+
+### Edge Modes
+
+| Mode | Description |
+|------|-------------|
+| `left_right` | Analyze left and right edges (10% of width each) |
+| `top_bottom` | Analyze top and bottom edges (10% of height each) |
+| `all` | Analyze all four edges (10% from each side) |
+
+Edge mode helps determine background colors that blend well with image edges.
 
 ## 📚 API Documentation
 
