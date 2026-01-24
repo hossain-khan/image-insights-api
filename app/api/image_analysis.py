@@ -18,13 +18,6 @@ from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from PIL import Image
 from pydantic import BaseModel, Field
 
-from app.api.responses import (
-    BrightnessAnalysisResponse,
-    EdgeAnalysisResponse,
-    FullAnalysisResponse,
-    HistogramAnalysisResponse,
-    MedianAnalysisResponse,
-)
 from app.config import settings
 from app.core import (
     calculate_average_luminance,

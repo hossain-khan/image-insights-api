@@ -1,7 +1,5 @@
 """Response models for image analysis API with OpenAPI examples."""
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 
