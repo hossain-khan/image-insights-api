@@ -3,6 +3,15 @@
   "info": {
     "title": "Image Insights API",
     "description": "\nA lightweight, fast, and portable REST API for image analysis.\n\n## Features\n\n- **Brightness Analysis**: Perceptual brightness scoring using Rec. 709 luminance formula\n- **Median Luminance**: Statistical median for images with highlights/shadows\n- **Histogram**: Distribution analysis across 10 luminance buckets\n\n## Algorithm\n\nUses the ITU-R BT.709 (Rec. 709) standard for perceptual luminance:\n\n```\nL = 0.2126R + 0.7152G + 0.0722B\n```\n\nBrightness scores range from 0 (black) to 100 (white).\n\n## Constraints\n\n- Maximum file size: 5MB\n- Supported formats: JPEG, PNG\n- Processing timeout: 2 seconds\n",
+    "contact": {
+      "name": "Image Insights API",
+      "url": "https://github.com/hossain-khan/image-insights-api",
+      "email": "support@image-insights-api.local"
+    },
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    },
     "version": "1.5.0"
   },
   "paths": {
@@ -11,7 +20,7 @@
         "tags": [
           "image-analysis"
         ],
-        "summary": "Analyze Image",
+        "summary": "Analyze Image Brightness",
         "description": "Analyze an uploaded image and return requested metrics.\n\n**Metrics:**\n- `brightness`: Brightness score (0-100), average luminance\n- `median`: Median luminance value\n- `histogram`: Distribution of luminance values in 10 buckets\n\n**Edge Mode:**\n- `left_right`: Analyze brightness of left and right edges (10% each)\n- `top_bottom`: Analyze brightness of top and bottom edges (10% each)\n- `all`: Analyze brightness of all four edges (10% each)\n\nEdge mode is useful for determining background colors that blend well with image edges.\n\n**Algorithm:** Rec. 709 perceptual luminance formula\n\nReturns deterministic results for the same input image.",
         "operationId": "analyze_image_v1_image_analysis_post",
         "parameters": [
@@ -64,7 +73,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Image analysis results with brightness metrics",
             "content": {
               "application/json": {
                 "schema": {
@@ -93,7 +102,7 @@
         "tags": [
           "image-analysis"
         ],
-        "summary": "Analyze Image From Url",
+        "summary": "Analyze Image from URL",
         "description": "Analyze an image from a URL and return requested metrics.\n\n**Metrics:**\n- `brightness`: Brightness score (0-100), average luminance\n- `median`: Median luminance value\n- `histogram`: Distribution of luminance values in 10 buckets\n\n**Edge Mode:**\n- `left_right`: Analyze brightness of left and right edges (10% each)\n- `top_bottom`: Analyze brightness of top and bottom edges (10% each)\n- `all`: Analyze brightness of all four edges (10% each)\n\nEdge mode is useful for determining background colors that blend well with image edges.\n\n**Algorithm:** Rec. 709 perceptual luminance formula\n\nReturns deterministic results for the same input image.",
         "operationId": "analyze_image_from_url_v1_image_analysis_url_post",
         "requestBody": {
@@ -108,7 +117,7 @@
         },
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Image analysis results with brightness metrics",
             "content": {
               "application/json": {
                 "schema": {
@@ -137,12 +146,12 @@
         "tags": [
           "health"
         ],
-        "summary": "Root",
-        "description": "Health check endpoint.",
+        "summary": "Root Health Check",
+        "description": "Basic health check endpoint to verify API availability.",
         "operationId": "root__get",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "API health status",
             "content": {
               "application/json": {
                 "schema": {}
@@ -157,12 +166,12 @@
         "tags": [
           "health"
         ],
-        "summary": "Health Check",
-        "description": "Detailed health check endpoint.",
+        "summary": "Detailed Health Check",
+        "description": "Detailed health check endpoint with version and service information.",
         "operationId": "health_check_health_get",
         "responses": {
           "200": {
-            "description": "Successful Response",
+            "description": "Detailed API health information",
             "content": {
               "application/json": {
                 "schema": {}

@@ -157,7 +157,11 @@ def _process_image_bytes(
     return response
 
 
-@router.post("/analysis")
+@router.post(
+    "/analysis",
+    summary="Analyze Image Brightness",
+    response_description="Image analysis results with brightness metrics",
+)
 async def analyze_image(
     image: Annotated[UploadFile, File(description="JPEG or PNG image to analyze")],
     metrics: Annotated[
@@ -234,7 +238,11 @@ async def analyze_image(
     return response
 
 
-@router.post("/analysis/url")
+@router.post(
+    "/analysis/url",
+    summary="Analyze Image from URL",
+    response_description="Image analysis results with brightness metrics",
+)
 async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     """
     Analyze an image from a URL and return requested metrics.
