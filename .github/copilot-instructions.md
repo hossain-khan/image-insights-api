@@ -93,8 +93,75 @@ This version is automatically used in:
 
 **⚠️ IMPORTANT: When updating the version, also update these files:**
 
-1. **`docs/swagger.json`** - Update the `"version"` field in the `"info"` section (line ~6)
-2. **`docs/API_DOC.md`** - Update health check response examples to reflect the new version (lines ~11, ~20)
+1. **`docs/swagger.json`** - Automatically updated via the export script, but manually update version in health check examples
+2. **`docs/API_DOC.md`** - Update health check response examples to reflect the new version (lines ~36, ~50)
+3. **`app/main.py`** - Update hardcoded versions in OpenAPI examples for health check endpoints
+
+### OpenAPI Spec Generation Workflow
+
+The `docs/swagger.json` is auto-generated from the running API using `scripts/export_openapi.py`. Follow these steps when updating versions:
+
+**Step 1: Update version in code**
+```bash
+# Edit app/__version__.py
+__version__ = "1.6.0"
+```
+
+**Step 2: Update hardcoded examples in code** (health check endpoints)
+
+Update the example versions in `app/main.py` for the `GET /` and `GET /health` endpoints:
+```python
+@app.get("/", ...)
+responses={
+    200: {
+        "content": {
+            "application/json": {
+                "examples": {
+                    "success": {
+                        "value": {
+                            "version": "1.6.0",  # Update this
+                            ...
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+```
+
+**Step 3: Update API documentation examples**
+
+Update `docs/API_DOC.md` health check response examples:
+```markdown
+#### `GET /`
+Response:
+```json
+{
+  "version": "1.6.0",  # Update this
+  ...
+}
+```
+```
+
+**Step 4: Start the API server**
+```bash
+python -m uvicorn app.main:app --reload
+```
+
+**Step 5: Regenerate OpenAPI spec**
+```bash
+# In another terminal
+python scripts/export_openapi.py
+```
+
+This automatically exports the OpenAPI spec to `docs/swagger.json` with all the latest examples.
+
+**Step 6: Verify the spec was updated**
+```bash
+# Check that versions are correct in the exported spec
+python -c "import json; spec = json.load(open('docs/swagger.json')); print('API Version:', spec['info']['version'])"
+```
 
 **To update the version:**
 
