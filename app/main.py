@@ -128,6 +128,24 @@ app.include_router(image_analysis_router)
     tags=["health"],
     summary="Root Health Check",
     response_description="API health status",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "Healthy API",
+                            "value": {
+                                "service": "image-insights-api",
+                                "version": "1.5.0",
+                                "status": "healthy",
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    },
 )
 async def root():
     """Basic health check endpoint to verify API availability."""
@@ -139,6 +157,24 @@ async def root():
     tags=["health"],
     summary="Detailed Health Check",
     response_description="Detailed API health information",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "Detailed health status",
+                            "value": {
+                                "status": "healthy",
+                                "service": "image-insights-api",
+                                "version": "1.5.0",
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    },
 )
 async def health_check():
     """Detailed health check endpoint with version and service information."""

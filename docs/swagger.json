@@ -360,7 +360,17 @@
             "description": "API health status",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {},
+                "examples": {
+                  "success": {
+                    "summary": "Healthy API",
+                    "value": {
+                      "service": "image-insights-api",
+                      "version": "1.5.0",
+                      "status": "healthy"
+                    }
+                  }
+                }
               }
             }
           }
@@ -380,7 +390,17 @@
             "description": "Detailed API health information",
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {},
+                "examples": {
+                  "success": {
+                    "summary": "Detailed health status",
+                    "value": {
+                      "status": "healthy",
+                      "service": "image-insights-api",
+                      "version": "1.5.0"
+                    }
+                  }
+                }
               }
             }
           }
