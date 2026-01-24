@@ -62,7 +62,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
-## � Privacy & Security
+## 🔐 Privacy & Security
 
 **Your privacy is our priority.** Image Insights API is built with privacy-first design:
 
@@ -75,7 +75,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 
 Each request is independent and isolated. What happens inside stays inside.
 
-## �📖 API Usage
+## 📖 API Usage
 
 ### Endpoint
 
