@@ -152,7 +152,7 @@
           "description": "Brightness score from 0 (black) to 100 (white)",
           "minimum": 0,
           "maximum": 100,
-          "example": 73
+          "example": 57
         },
         "average_luminance": {
           "type": "number",
@@ -160,7 +160,7 @@
           "description": "Average luminance value (0-255)",
           "minimum": 0,
           "maximum": 255,
-          "example": 186.3
+          "example": 146.28
         },
         "median_luminance": {
           "type": "number",
@@ -168,7 +168,7 @@
           "description": "Median luminance value (0-255)",
           "minimum": 0,
           "maximum": 255,
-          "example": 172.4
+          "example": 165.88
         },
         "histogram": {
           "type": "array",
@@ -180,12 +180,12 @@
         "width": {
           "type": "integer",
           "description": "Original image width in pixels",
-          "example": 1920
+          "example": 536
         },
         "height": {
           "type": "integer",
           "description": "Original image height in pixels",
-          "example": 1080
+          "example": 354
         },
         "algorithm": {
           "type": "string",
@@ -198,7 +198,7 @@
           "format": "float",
           "description": "Time taken to process the image in milliseconds",
           "minimum": 0,
-          "example": 0.45
+          "example": 16.18
         }
       }
     },
