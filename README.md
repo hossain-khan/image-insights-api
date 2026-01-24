@@ -16,6 +16,7 @@ A lightweight, containerized REST API that analyzes JPEG and PNG images and retu
 - **Fast & Lightweight**: < 100ms for typical images
 - **Portable**: Deploy anywhere Docker runs
 - **OpenAPI Documentation**: Auto-generated Swagger UI
+- **Privacy-First Design**: Images are never stored; analysis happens in-memory and data is immediately discarded
 
 ## 🚀 Quick Start
 
@@ -60,6 +61,19 @@ pip install -r requirements.txt
 # Run the server
 uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
+
+## 🔐 Privacy & Security
+
+**Your privacy is our priority.** Image Insights API is built with privacy-first design:
+
+- ✅ **Zero Image Storage**: Images are never saved to disk or database
+- ✅ **In-Memory Processing Only**: Images are processed in RAM and immediately discarded
+- ✅ **Stateless Architecture**: No request tracking, sessions, or user profiles
+- ✅ **No Data Retention**: After analysis completes, image data is garbage collected
+- ✅ **Safe Logging**: URLs are redacted, no pixel data is logged
+- ✅ **No Third-Party Sharing**: All processing is local to your deployment
+
+Each request is independent and isolated. What happens inside stays inside.
 
 ## 📖 API Usage
 

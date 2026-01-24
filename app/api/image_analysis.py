@@ -1,4 +1,11 @@
-"""Image analysis API endpoint."""
+"""Image analysis API endpoint.
+
+Privacy-First Design:
+- Images are processed in-memory only, never stored on disk or database
+- Image data is immediately discarded after analysis completes
+- No user tracking, sessions, or request history
+- All processing is stateless and isolated per request
+"""
 
 import io
 import logging
@@ -73,13 +80,19 @@ def _process_image_bytes(
     """
     Process image bytes and return analysis results.
 
+    **Privacy-First Processing:**
+    - Image data exists only in-memory during this function execution
+    - No disk writes, database storage, or external uploads
+    - All image data is discarded when function returns (garbage collected)
+    - Only aggregate metrics are returned, never pixel data
+
     Args:
-        contents: Raw image bytes
+        contents: Raw image bytes (immediately discarded after analysis)
         requested_metrics: Set of metrics to calculate
         validated_edge_mode: Validated edge mode (if any)
 
     Returns:
-        Dictionary with analysis results
+        Dictionary with analysis results (no image data included)
     """
     # Parse image
     try:

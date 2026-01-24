@@ -1,5 +1,18 @@
 # Image Insights API Documentation
 
+## 🔐 Privacy Guarantee
+
+**Your images are safe with us.**
+
+This API is **stateless and privacy-first**:
+- 🔒 **Images are never stored** - analysis happens in-memory only
+- 🧹 **Automatic cleanup** - image data is discarded immediately after analysis
+- 🚫 **No tracking** - no session state, cookies, or request history
+- 🔇 **No data sharing** - all processing is local, nothing is sent to third parties
+- 📝 **Safe logging** - only metadata is logged (file size, dimensions, processing time)
+
+Each request is completely independent. What you analyze stays private.
+
 ## Base URL
 
 ```
