@@ -3,6 +3,13 @@ Image Insights API
 
 A stateless REST microservice that provides fast, deterministic image analysis metrics.
 Supports brightness analysis using Rec. 709 perceptual luminance formula.
+
+🔐 Privacy-First Design:
+- Images are processed in-memory only
+- No storage, no tracking, no data retention
+- Each request is completely independent and isolated
+- Image data is immediately discarded after analysis
+- Only aggregate metrics are returned to users
 """
 
 import logging
