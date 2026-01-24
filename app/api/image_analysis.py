@@ -18,6 +18,13 @@ from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 from PIL import Image
 from pydantic import BaseModel, Field
 
+from app.api.responses import (
+    BrightnessAnalysisResponse,
+    EdgeAnalysisResponse,
+    FullAnalysisResponse,
+    HistogramAnalysisResponse,
+    MedianAnalysisResponse,
+)
 from app.config import settings
 from app.core import (
     calculate_average_luminance,
@@ -161,6 +168,90 @@ def _process_image_bytes(
     "/analysis",
     summary="Analyze Image Brightness",
     response_description="Image analysis results with brightness metrics",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "brightness_only": {
+                            "summary": "Brightness metric only",
+                            "value": {
+                                "brightness_score": 57,
+                                "average_luminance": 146.28,
+                                "width": 536,
+                                "height": 354,
+                                "algorithm": "rec709",
+                                "processing_time_ms": 45.23,
+                            },
+                        },
+                        "brightness_with_median": {
+                            "summary": "Brightness and median metrics",
+                            "value": {
+                                "brightness_score": 57,
+                                "average_luminance": 146.28,
+                                "median_luminance": 165.88,
+                                "width": 536,
+                                "height": 354,
+                                "algorithm": "rec709",
+                                "processing_time_ms": 48.5,
+                            },
+                        },
+                        "full_analysis": {
+                            "summary": "Full analysis with histogram",
+                            "value": {
+                                "brightness_score": 57,
+                                "average_luminance": 146.28,
+                                "median_luminance": 165.88,
+                                "histogram": [
+                                    {"range": "0-24", "percent": 0.2},
+                                    {"range": "25-50", "percent": 13.1},
+                                    {"range": "51-75", "percent": 15.6},
+                                    {"range": "76-101", "percent": 3.0},
+                                    {"range": "102-127", "percent": 3.3},
+                                    {"range": "128-152", "percent": 11.5},
+                                    {"range": "153-178", "percent": 11.9},
+                                    {"range": "179-203", "percent": 24.8},
+                                    {"range": "204-229", "percent": 15.5},
+                                    {"range": "230-255", "percent": 4.5},
+                                ],
+                                "width": 536,
+                                "height": 354,
+                                "algorithm": "rec709",
+                                "processing_time_ms": 50.1,
+                            },
+                        },
+                        "with_edge_analysis": {
+                            "summary": "Analysis with edge-based brightness",
+                            "value": {
+                                "brightness_score": 57,
+                                "average_luminance": 146.28,
+                                "median_luminance": 165.88,
+                                "histogram": [
+                                    {"range": "0-24", "percent": 0.2},
+                                    {"range": "25-50", "percent": 13.1},
+                                    {"range": "51-75", "percent": 15.6},
+                                    {"range": "76-101", "percent": 3.0},
+                                    {"range": "102-127", "percent": 3.3},
+                                    {"range": "128-152", "percent": 11.5},
+                                    {"range": "153-178", "percent": 11.9},
+                                    {"range": "179-203", "percent": 24.8},
+                                    {"range": "204-229", "percent": 15.5},
+                                    {"range": "230-255", "percent": 4.5},
+                                ],
+                                "edge_brightness_score": 51,
+                                "edge_average_luminance": 130.18,
+                                "edge_mode": "all",
+                                "width": 536,
+                                "height": 354,
+                                "algorithm": "rec709",
+                                "processing_time_ms": 61.06,
+                            },
+                        },
+                    }
+                }
+            }
+        }
+    },
 )
 async def analyze_image(
     image: Annotated[UploadFile, File(description="JPEG or PNG image to analyze")],
@@ -242,6 +333,54 @@ async def analyze_image(
     "/analysis/url",
     summary="Analyze Image from URL",
     response_description="Image analysis results with brightness metrics",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "brightness_only": {
+                            "summary": "Brightness metric only",
+                            "value": {
+                                "brightness_score": 65,
+                                "average_luminance": 165.04,
+                                "width": 100,
+                                "height": 100,
+                                "algorithm": "rec709",
+                                "processing_time_ms": 186.5,
+                            },
+                        },
+                        "full_analysis": {
+                            "summary": "Full analysis with all metrics",
+                            "value": {
+                                "brightness_score": 57,
+                                "average_luminance": 146.28,
+                                "median_luminance": 165.88,
+                                "histogram": [
+                                    {"range": "0-24", "percent": 0.2},
+                                    {"range": "25-50", "percent": 13.1},
+                                    {"range": "51-75", "percent": 15.6},
+                                    {"range": "76-101", "percent": 3.0},
+                                    {"range": "102-127", "percent": 3.3},
+                                    {"range": "128-152", "percent": 11.5},
+                                    {"range": "153-178", "percent": 11.9},
+                                    {"range": "179-203", "percent": 24.8},
+                                    {"range": "204-229", "percent": 15.5},
+                                    {"range": "230-255", "percent": 4.5},
+                                ],
+                                "edge_brightness_score": 51,
+                                "edge_average_luminance": 130.18,
+                                "edge_mode": "all",
+                                "width": 536,
+                                "height": 354,
+                                "algorithm": "rec709",
+                                "processing_time_ms": 61.06,
+                            },
+                        },
+                    }
+                }
+            }
+        }
+    },
 )
 async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     """
