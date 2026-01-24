@@ -131,12 +131,12 @@ curl -X POST http://localhost:8080/v1/image/analysis \
 **Response:**
 ```json
 {
-  "brightness_score": 73,
-  "average_luminance": 186.3,
-  "processing_time_ms": 0.45,
-  "width": 1920,
-  "height": 1080,
-  "algorithm": "rec709"
+  "brightness_score": 62,
+  "average_luminance": 158.21,
+  "width": 536,
+  "height": 354,
+  "algorithm": "rec709",
+  "processing_time_ms": 50.29
 }
 ```
 
@@ -150,13 +150,13 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median"
 **Response:**
 ```json
 {
-  "brightness_score": 73,
-  "average_luminance": 186.3,
-  "median_luminance": 172.4,
-  "processing_time_ms": 0.48,
-  "width": 1920,
-  "height": 1080,
-  "algorithm": "rec709"
+  "brightness_score": 57,
+  "average_luminance": 146.28,
+  "median_luminance": 165.88,
+  "width": 536,
+  "height": 354,
+  "algorithm": "rec709",
+  "processing_time_ms": 13.5
 }
 ```
 
@@ -170,24 +170,24 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median,
 **Response:**
 ```json
 {
-  "brightness_score": 73,
-  "average_luminance": 186.3,
-  "median_luminance": 172.4,
+  "brightness_score": 57,
+  "average_luminance": 146.28,
+  "median_luminance": 165.88,
   "histogram": [
-    { "range": "0-25", "percent": 2.1 },
-    { "range": "26-51", "percent": 5.3 },
-    { "range": "52-76", "percent": 8.7 },
-    { "range": "77-102", "percent": 12.4 },
-    { "range": "103-127", "percent": 15.2 },
-    { "range": "128-153", "percent": 18.6 },
-    { "range": "154-178", "percent": 14.3 },
-    { "range": "179-204", "percent": 10.8 },
-    { "range": "205-229", "percent": 7.1 },
-    { "range": "230-255", "percent": 5.5 }
+    { "range": "0-24", "percent": 0.2 },
+    { "range": "25-50", "percent": 13.1 },
+    { "range": "51-75", "percent": 15.6 },
+    { "range": "76-101", "percent": 3.0 },
+    { "range": "102-127", "percent": 3.3 },
+    { "range": "128-152", "percent": 11.5 },
+    { "range": "153-178", "percent": 11.9 },
+    { "range": "179-203", "percent": 24.8 },
+    { "range": "204-229", "percent": 15.5 },
+    { "range": "230-255", "percent": 4.5 }
   ],
-  "processing_time_ms": 0.52,
-  "width": 1920,
-  "height": 1080,
+  "processing_time_ms": 16.18,
+  "width": 536,
+  "height": 354,
   "algorithm": "rec709"
 }
 ```
@@ -250,15 +250,15 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
 **Response:**
 ```json
 {
-  "brightness_score": 73,
-  "average_luminance": 186.3,
-  "edge_brightness_score": 88,
-  "edge_average_luminance": 224.4,
+  "brightness_score": 57,
+  "average_luminance": 146.28,
+  "edge_brightness_score": 51,
+  "edge_average_luminance": 130.18,
   "edge_mode": "all",
-  "processing_time_ms": 0.46,
-  "width": 1920,
-  "height": 1080,
-  "algorithm": "rec709"
+  "width": 536,
+  "height": 354,
+  "algorithm": "rec709",
+  "processing_time_ms": 10.64
 }
 ```
 
@@ -330,6 +330,34 @@ curl -X POST "http://localhost:8080/v1/image/analysis/url" \
     "metrics": "brightness,median,histogram",
     "edge_mode": "all"
   }'
+```
+
+**Response:**
+```json
+{
+  "brightness_score": 57,
+  "average_luminance": 146.28,
+  "median_luminance": 165.88,
+  "histogram": [
+    { "range": "0-24", "percent": 0.2 },
+    { "range": "25-50", "percent": 13.1 },
+    { "range": "51-75", "percent": 15.6 },
+    { "range": "76-101", "percent": 3.0 },
+    { "range": "102-127", "percent": 3.3 },
+    { "range": "128-152", "percent": 11.5 },
+    { "range": "153-178", "percent": 11.9 },
+    { "range": "179-203", "percent": 24.8 },
+    { "range": "204-229", "percent": 15.5 },
+    { "range": "230-255", "percent": 4.5 }
+  ],
+  "edge_brightness_score": 51,
+  "edge_average_luminance": 130.18,
+  "edge_mode": "all",
+  "processing_time_ms": 16.18,
+  "width": 536,
+  "height": 354,
+  "algorithm": "rec709"
+}
 ```
 
 #### Python Example
