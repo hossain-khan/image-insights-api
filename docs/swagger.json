@@ -122,9 +122,89 @@
           }
         }
       }
+    },
+    "/v1/image/analysis/url": {
+      "post": {
+        "tags": ["image-analysis"],
+        "summary": "Analyze image from URL",
+        "description": "Analyze an image from a URL and return brightness metrics using Rec. 709 perceptual luminance.\n\n**Metrics:**\n- `brightness`: Brightness score (0-100) and average luminance (default)\n- `median`: Median luminance value\n- `histogram`: Distribution across 10 luminance buckets\n\n**Edge Mode (Optional):**\n- `left_right`: Analyze brightness of left and right edges (10% of width each)\n- `top_bottom`: Analyze brightness of top and bottom edges (10% of height each)\n- `all`: Analyze brightness of all four edges (10% from each side)",
+        "operationId": "analyzeImageFromUrl",
+        "consumes": ["application/json"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Image URL and analysis parameters",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ImageUrlRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful analysis",
+            "schema": {
+              "$ref": "#/definitions/AnalysisResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request - Invalid image or metrics",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "413": {
+            "description": "Payload too large - File exceeds 5MB limit",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "415": {
+            "description": "Unsupported media type - Only JPEG and PNG allowed",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          },
+          "422": {
+            "description": "Unprocessable entity - Invalid request",
+            "schema": {
+              "$ref": "#/definitions/ValidationErrorResponse"
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      }
     }
   },
   "definitions": {
+    "ImageUrlRequest": {
+      "type": "object",
+      "required": ["url"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "URL of the JPEG or PNG image to analyze",
+          "example": "https://example.com/photo.jpg"
+        },
+        "metrics": {
+          "type": "string",
+          "description": "Comma-separated list of metrics to return. Options: brightness, median, histogram. Default: brightness",
+          "example": "brightness,median,histogram"
+        },
+        "edge_mode": {
+          "type": "string",
+          "description": "Edge-based brightness mode: left_right, top_bottom, or all (analyzes 10% of edges)",
+          "enum": ["left_right", "top_bottom", "all"],
+          "example": "all"
+        }
+      }
+    },
     "HealthResponse": {
       "type": "object",
       "required": ["service", "version", "status"],
