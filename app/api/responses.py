@@ -45,9 +45,7 @@ class BrightnessAnalysisResponse(BaseModel):
 class MedianAnalysisResponse(BrightnessAnalysisResponse):
     """Response including median luminance."""
 
-    median_luminance: float = Field(
-        ..., ge=0, le=255, description="Median luminance value (0-255)"
-    )
+    median_luminance: float = Field(..., ge=0, le=255, description="Median luminance value (0-255)")
 
     class Config:
         json_schema_extra = {
@@ -105,9 +103,7 @@ class EdgeAnalysisResponse(BrightnessAnalysisResponse):
     edge_average_luminance: float = Field(
         ..., ge=0, le=255, description="Average luminance value (0-255) for the specified edges"
     )
-    edge_mode: str = Field(
-        ..., description="Edge mode used (left_right, top_bottom, or all)"
-    )
+    edge_mode: str = Field(..., description="Edge mode used (left_right, top_bottom, or all)")
 
     class Config:
         json_schema_extra = {
