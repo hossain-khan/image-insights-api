@@ -1,12 +1,17 @@
 """Pytest configuration and fixtures."""
 
 import io
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
 from app.main import app
+
+# Path to test fixtures
+TEST_FIXTURES_DIR = Path(__file__).parent / "fixtures"
+SAMPLE_IMAGES_DIR = Path(__file__).parent
 
 
 @pytest.fixture
@@ -72,3 +77,23 @@ def large_image(create_test_image):
 def jpeg_image(create_test_image):
     """Create a JPEG image."""
     return create_test_image(format="JPEG")
+
+
+@pytest.fixture
+def sample_color_image():
+    """Load the sample color image (sample2-536x354.jpg)."""
+    image_path = SAMPLE_IMAGES_DIR / "sample2-536x354.jpg"
+    if not image_path.exists():
+        pytest.skip(f"Sample image not found: {image_path}")
+    with open(image_path, "rb") as f:
+        return io.BytesIO(f.read())
+
+
+@pytest.fixture
+def sample_grayscale_image():
+    """Load the sample grayscale image (sample1-536x354-grayscale.jpg)."""
+    image_path = SAMPLE_IMAGES_DIR / "sample1-536x354-grayscale.jpg"
+    if not image_path.exists():
+        pytest.skip(f"Sample image not found: {image_path}")
+    with open(image_path, "rb") as f:
+        return io.BytesIO(f.read())
