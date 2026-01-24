@@ -15,7 +15,7 @@ repos:
         name: Export OpenAPI spec
         entry: python scripts/export_openapi.py
         language: system
-        types: [python]
+        files: "^(app/|scripts/)"
         stages: [commit]
         pass_filenames: false
         description: "Export OpenAPI spec from code changes"
