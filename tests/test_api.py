@@ -717,7 +717,9 @@ class TestRealSampleImages:
         """Test analysis of real sample grayscale image."""
         response = client.post(
             "/v1/image/analysis?metrics=brightness,histogram",
-            files={"image": ("sample1-536x354-grayscale.jpg", sample_grayscale_image, "image/jpeg")},
+            files={
+                "image": ("sample1-536x354-grayscale.jpg", sample_grayscale_image, "image/jpeg")
+            },
         )
         assert response.status_code == 200
         data = response.json()
@@ -781,4 +783,3 @@ class TestRealSampleImages:
             assert "percent" in bucket
             assert isinstance(bucket["percent"], (int, float))
             assert 0 <= bucket["percent"] <= 100
-
