@@ -1,0 +1,21 @@
+# Pre-commit hooks configuration
+# Ensures code quality and keeps artifacts in sync with source
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.1.11
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: local
+    hooks:
+      - id: export-openapi-spec
+        name: Export OpenAPI spec
+        entry: python scripts/export_openapi.py
+        language: system
+        types: [python]
+        stages: [commit]
+        pass_filenames: false
+        description: "Export OpenAPI spec from code changes"
