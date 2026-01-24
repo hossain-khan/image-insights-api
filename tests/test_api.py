@@ -683,3 +683,102 @@ class TestUrlEndpointSSRFProtection:
             "/v1/image/analysis/url", json={"url": "https://example.com/image.png"}
         )
         assert response.status_code == 200
+
+
+class TestRealSampleImages:
+    """Test analysis with real sample images."""
+
+    def test_analyze_sample_color_image(self, client, sample_color_image):
+        """Test analysis of real sample color image."""
+        response = client.post(
+            "/v1/image/analysis?metrics=brightness,median",
+            files={"image": ("sample2-536x354.jpg", sample_color_image, "image/jpeg")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify expected dimensions
+        assert data["width"] == 536
+        assert data["height"] == 354
+
+        # Verify brightness metrics are present and reasonable
+        assert "brightness_score" in data
+        assert "average_luminance" in data
+        assert "median_luminance" in data
+        assert 0 <= data["brightness_score"] <= 100
+        assert 0 <= data["average_luminance"] <= 255
+        assert 0 <= data["median_luminance"] <= 255
+
+        # Based on actual API testing: brightness_score should be around 57
+        assert 50 <= data["brightness_score"] <= 65
+        assert 140 <= data["average_luminance"] <= 160
+
+    def test_analyze_sample_grayscale_image(self, client, sample_grayscale_image):
+        """Test analysis of real sample grayscale image."""
+        response = client.post(
+            "/v1/image/analysis?metrics=brightness,histogram",
+            files={"image": ("sample1-536x354-grayscale.jpg", sample_grayscale_image, "image/jpeg")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify expected dimensions
+        assert data["width"] == 536
+        assert data["height"] == 354
+
+        # Verify brightness and histogram are present
+        assert "brightness_score" in data
+        assert "average_luminance" in data
+        assert "histogram" in data
+        assert len(data["histogram"]) == 10
+
+        # Based on actual API testing: brightness_score should be around 62
+        assert 55 <= data["brightness_score"] <= 70
+        assert 150 <= data["average_luminance"] <= 170
+
+    def test_sample_images_with_edge_mode(self, client, sample_color_image):
+        """Test edge mode analysis with sample image."""
+        response = client.post(
+            "/v1/image/analysis?edge_mode=all",
+            files={"image": ("sample2-536x354.jpg", sample_color_image, "image/jpeg")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify edge analysis fields
+        assert "edge_brightness_score" in data
+        assert "edge_average_luminance" in data
+        assert "edge_mode" in data
+        assert data["edge_mode"] == "all"
+
+        # Edge values should be reasonable
+        assert 0 <= data["edge_brightness_score"] <= 100
+        assert 0 <= data["edge_average_luminance"] <= 255
+
+    def test_sample_images_all_metrics(self, client, sample_color_image):
+        """Test sample image with all available metrics."""
+        response = client.post(
+            "/v1/image/analysis?metrics=brightness,median,histogram",
+            files={"image": ("sample2-536x354.jpg", sample_color_image, "image/jpeg")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        # Verify all metrics are present
+        assert "brightness_score" in data
+        assert "average_luminance" in data
+        assert "median_luminance" in data
+        assert "histogram" in data
+        assert "processing_time_ms" in data
+        assert "width" in data
+        assert "height" in data
+
+        # Verify histogram has correct structure
+        assert isinstance(data["histogram"], list)
+        assert len(data["histogram"]) == 10
+        for bucket in data["histogram"]:
+            assert "range" in bucket
+            assert "percent" in bucket
+            assert isinstance(bucket["percent"], (int, float))
+            assert 0 <= bucket["percent"] <= 100
+
