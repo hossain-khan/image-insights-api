@@ -76,6 +76,25 @@ Brightness scores range from 0 (black) to 100 (white).
 - Processing timeout: 2 seconds
 """,
     version=__version__,
+    contact={
+        "name": "Image Insights API",
+        "url": "https://github.com/hossain-khan/image-insights-api",
+        "email": "support@image-insights-api.local",
+    },
+    license_info={
+        "name": "MIT",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    tags_metadata=[
+        {
+            "name": "health",
+            "description": "Health check endpoints to verify API status",
+        },
+        {
+            "name": "image-analysis",
+            "description": "Image analysis endpoints for brightness metrics and luminance calculations",
+        },
+    ],
     lifespan=lifespan,
     docs_url="/docs",
     redoc_url="/redoc",
@@ -104,13 +123,59 @@ async def global_exception_handler(request: Request, exc: Exception):
 app.include_router(image_analysis_router)
 
 
-@app.get("/", tags=["health"])
+@app.get(
+    "/",
+    tags=["health"],
+    summary="Root Health Check",
+    response_description="API health status",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "Healthy API",
+                            "value": {
+                                "service": "image-insights-api",
+                                "version": "1.5.0",
+                                "status": "healthy",
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    },
+)
 async def root():
-    """Health check endpoint."""
+    """Basic health check endpoint to verify API availability."""
     return {"service": "image-insights-api", "version": __version__, "status": "healthy"}
 
 
-@app.get("/health", tags=["health"])
+@app.get(
+    "/health",
+    tags=["health"],
+    summary="Detailed Health Check",
+    response_description="Detailed API health information",
+    responses={
+        200: {
+            "content": {
+                "application/json": {
+                    "examples": {
+                        "success": {
+                            "summary": "Detailed health status",
+                            "value": {
+                                "status": "healthy",
+                                "service": "image-insights-api",
+                                "version": "1.5.0",
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    },
+)
 async def health_check():
-    """Detailed health check endpoint."""
+    """Detailed health check endpoint with version and service information."""
     return {"status": "healthy", "service": "image-insights-api", "version": __version__}

@@ -1,43 +1,377 @@
 {
-  "swagger": "2.0",
+  "openapi": "3.1.0",
   "info": {
     "title": "Image Insights API",
-    "description": "A lightweight REST API for image brightness analysis using Rec. 709 perceptual luminance.\n\n## Features\n- Brightness scoring (0-100)\n- Median luminance calculation\n- Histogram distribution analysis\n- Processing time metrics\n- Comprehensive startup logging\n\n## Algorithm\nUses ITU-R BT.709 standard: `L = 0.2126R + 0.7152G + 0.0722B`",
-    "version": "1.5.0",
+    "description": "\nA lightweight, fast, and portable REST API for image analysis.\n\n## Features\n\n- **Brightness Analysis**: Perceptual brightness scoring using Rec. 709 luminance formula\n- **Median Luminance**: Statistical median for images with highlights/shadows\n- **Histogram**: Distribution analysis across 10 luminance buckets\n\n## Algorithm\n\nUses the ITU-R BT.709 (Rec. 709) standard for perceptual luminance:\n\n```\nL = 0.2126R + 0.7152G + 0.0722B\n```\n\nBrightness scores range from 0 (black) to 100 (white).\n\n## Constraints\n\n- Maximum file size: 5MB\n- Supported formats: JPEG, PNG\n- Processing timeout: 2 seconds\n",
     "contact": {
-      "name": "Image Insights API Team"
+      "name": "Image Insights API",
+      "url": "https://github.com/hossain-khan/image-insights-api",
+      "email": "support@image-insights-api.local"
     },
     "license": {
-      "name": "MIT"
-    }
-  },
-  "host": "localhost:8080",
-  "basePath": "/",
-  "schemes": ["http"],
-  "consumes": ["multipart/form-data"],
-  "produces": ["application/json"],
-  "tags": [
-    {
-      "name": "health",
-      "description": "Health check endpoints"
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
     },
-    {
-      "name": "image-analysis",
-      "description": "Image analysis endpoints"
-    }
-  ],
+    "version": "1.5.0"
+  },
   "paths": {
-    "/": {
-      "get": {
-        "tags": ["health"],
-        "summary": "Root health check",
-        "description": "Basic health check endpoint",
-        "operationId": "root",
+    "/v1/image/analysis": {
+      "post": {
+        "tags": [
+          "image-analysis"
+        ],
+        "summary": "Analyze Image Brightness",
+        "description": "Analyze an uploaded image and return requested metrics.\n\n**Metrics:**\n- `brightness`: Brightness score (0-100), average luminance\n- `median`: Median luminance value\n- `histogram`: Distribution of luminance values in 10 buckets\n\n**Edge Mode:**\n- `left_right`: Analyze brightness of left and right edges (10% each)\n- `top_bottom`: Analyze brightness of top and bottom edges (10% each)\n- `all`: Analyze brightness of all four edges (10% each)\n\nEdge mode is useful for determining background colors that blend well with image edges.\n\n**Algorithm:** Rec. 709 perceptual luminance formula\n\nReturns deterministic results for the same input image.",
+        "operationId": "analyze_image_v1_image_analysis_post",
+        "parameters": [
+          {
+            "name": "metrics",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated metrics: brightness, median, histogram",
+              "title": "Metrics"
+            },
+            "description": "Comma-separated metrics: brightness, median, histogram"
+          },
+          {
+            "name": "edge_mode",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Edge-based brightness mode: left_right, top_bottom, or all (analyzes 10% of edges)",
+              "title": "Edge Mode"
+            },
+            "description": "Edge-based brightness mode: left_right, top_bottom, or all (analyzes 10% of edges)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_analyze_image_v1_image_analysis_post"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "Service is healthy",
-            "schema": {
-              "$ref": "#/definitions/HealthResponse"
+            "description": "Image analysis results with brightness metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Analyze Image V1 Image Analysis Post"
+                },
+                "examples": {
+                  "brightness_only": {
+                    "summary": "Brightness metric only",
+                    "value": {
+                      "brightness_score": 57,
+                      "average_luminance": 146.28,
+                      "width": 536,
+                      "height": 354,
+                      "algorithm": "rec709",
+                      "processing_time_ms": 45.23
+                    }
+                  },
+                  "brightness_with_median": {
+                    "summary": "Brightness and median metrics",
+                    "value": {
+                      "brightness_score": 57,
+                      "average_luminance": 146.28,
+                      "median_luminance": 165.88,
+                      "width": 536,
+                      "height": 354,
+                      "algorithm": "rec709",
+                      "processing_time_ms": 48.5
+                    }
+                  },
+                  "full_analysis": {
+                    "summary": "Full analysis with histogram",
+                    "value": {
+                      "brightness_score": 57,
+                      "average_luminance": 146.28,
+                      "median_luminance": 165.88,
+                      "histogram": [
+                        {
+                          "range": "0-24",
+                          "percent": 0.2
+                        },
+                        {
+                          "range": "25-50",
+                          "percent": 13.1
+                        },
+                        {
+                          "range": "51-75",
+                          "percent": 15.6
+                        },
+                        {
+                          "range": "76-101",
+                          "percent": 3.0
+                        },
+                        {
+                          "range": "102-127",
+                          "percent": 3.3
+                        },
+                        {
+                          "range": "128-152",
+                          "percent": 11.5
+                        },
+                        {
+                          "range": "153-178",
+                          "percent": 11.9
+                        },
+                        {
+                          "range": "179-203",
+                          "percent": 24.8
+                        },
+                        {
+                          "range": "204-229",
+                          "percent": 15.5
+                        },
+                        {
+                          "range": "230-255",
+                          "percent": 4.5
+                        }
+                      ],
+                      "width": 536,
+                      "height": 354,
+                      "algorithm": "rec709",
+                      "processing_time_ms": 50.1
+                    }
+                  },
+                  "with_edge_analysis": {
+                    "summary": "Analysis with edge-based brightness",
+                    "value": {
+                      "brightness_score": 57,
+                      "average_luminance": 146.28,
+                      "median_luminance": 165.88,
+                      "histogram": [
+                        {
+                          "range": "0-24",
+                          "percent": 0.2
+                        },
+                        {
+                          "range": "25-50",
+                          "percent": 13.1
+                        },
+                        {
+                          "range": "51-75",
+                          "percent": 15.6
+                        },
+                        {
+                          "range": "76-101",
+                          "percent": 3.0
+                        },
+                        {
+                          "range": "102-127",
+                          "percent": 3.3
+                        },
+                        {
+                          "range": "128-152",
+                          "percent": 11.5
+                        },
+                        {
+                          "range": "153-178",
+                          "percent": 11.9
+                        },
+                        {
+                          "range": "179-203",
+                          "percent": 24.8
+                        },
+                        {
+                          "range": "204-229",
+                          "percent": 15.5
+                        },
+                        {
+                          "range": "230-255",
+                          "percent": 4.5
+                        }
+                      ],
+                      "edge_brightness_score": 51,
+                      "edge_average_luminance": 130.18,
+                      "edge_mode": "all",
+                      "width": 536,
+                      "height": 354,
+                      "algorithm": "rec709",
+                      "processing_time_ms": 61.06
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/image/analysis/url": {
+      "post": {
+        "tags": [
+          "image-analysis"
+        ],
+        "summary": "Analyze Image from URL",
+        "description": "Analyze an image from a URL and return requested metrics.\n\n**Metrics:**\n- `brightness`: Brightness score (0-100), average luminance\n- `median`: Median luminance value\n- `histogram`: Distribution of luminance values in 10 buckets\n\n**Edge Mode:**\n- `left_right`: Analyze brightness of left and right edges (10% each)\n- `top_bottom`: Analyze brightness of top and bottom edges (10% each)\n- `all`: Analyze brightness of all four edges (10% each)\n\nEdge mode is useful for determining background colors that blend well with image edges.\n\n**Algorithm:** Rec. 709 perceptual luminance formula\n\nReturns deterministic results for the same input image.",
+        "operationId": "analyze_image_from_url_v1_image_analysis_url_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImageUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Image analysis results with brightness metrics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Analyze Image From Url V1 Image Analysis Url Post"
+                },
+                "examples": {
+                  "brightness_only": {
+                    "summary": "Brightness metric only",
+                    "value": {
+                      "brightness_score": 65,
+                      "average_luminance": 165.04,
+                      "width": 100,
+                      "height": 100,
+                      "algorithm": "rec709",
+                      "processing_time_ms": 186.5
+                    }
+                  },
+                  "full_analysis": {
+                    "summary": "Full analysis with all metrics",
+                    "value": {
+                      "brightness_score": 57,
+                      "average_luminance": 146.28,
+                      "median_luminance": 165.88,
+                      "histogram": [
+                        {
+                          "range": "0-24",
+                          "percent": 0.2
+                        },
+                        {
+                          "range": "25-50",
+                          "percent": 13.1
+                        },
+                        {
+                          "range": "51-75",
+                          "percent": 15.6
+                        },
+                        {
+                          "range": "76-101",
+                          "percent": 3.0
+                        },
+                        {
+                          "range": "102-127",
+                          "percent": 3.3
+                        },
+                        {
+                          "range": "128-152",
+                          "percent": 11.5
+                        },
+                        {
+                          "range": "153-178",
+                          "percent": 11.9
+                        },
+                        {
+                          "range": "179-203",
+                          "percent": 24.8
+                        },
+                        {
+                          "range": "204-229",
+                          "percent": 15.5
+                        },
+                        {
+                          "range": "230-255",
+                          "percent": 4.5
+                        }
+                      ],
+                      "edge_brightness_score": 51,
+                      "edge_average_luminance": 130.18,
+                      "edge_mode": "all",
+                      "width": 536,
+                      "height": 354,
+                      "algorithm": "rec709",
+                      "processing_time_ms": 61.06
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Root Health Check",
+        "description": "Basic health check endpoint to verify API availability.",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "API health status",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "success": {
+                    "summary": "Healthy API",
+                    "value": {
+                      "service": "image-insights-api",
+                      "version": "1.5.0",
+                      "status": "healthy"
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -45,259 +379,136 @@
     },
     "/health": {
       "get": {
-        "tags": ["health"],
-        "summary": "Detailed health check",
-        "description": "Detailed health check endpoint",
-        "operationId": "healthCheck",
-        "responses": {
-          "200": {
-            "description": "Service is healthy",
-            "schema": {
-              "$ref": "#/definitions/HealthResponse"
-            }
-          }
-        }
-      }
-    },
-    "/v1/image/analysis": {
-      "post": {
-        "tags": ["image-analysis"],
-        "summary": "Analyze image brightness",
-        "description": "Analyze an image and return brightness metrics using Rec. 709 perceptual luminance.\n\n**Metrics:**\n- `brightness`: Brightness score (0-100) and average luminance (default)\n- `median`: Median luminance value\n- `histogram`: Distribution across 10 luminance buckets",
-        "operationId": "analyzeImage",
-        "consumes": ["multipart/form-data"],
-        "parameters": [
-          {
-            "name": "image",
-            "in": "formData",
-            "description": "JPEG or PNG image file to analyze",
-            "required": true,
-            "type": "file"
-          },
-          {
-            "name": "metrics",
-            "in": "query",
-            "description": "Comma-separated list of metrics to return. Options: brightness, median, histogram. Default: brightness",
-            "required": false,
-            "type": "string",
-            "default": "brightness"
-          }
+        "tags": [
+          "health"
         ],
+        "summary": "Detailed Health Check",
+        "description": "Detailed health check endpoint with version and service information.",
+        "operationId": "health_check_health_get",
         "responses": {
           "200": {
-            "description": "Successful analysis",
-            "schema": {
-              "$ref": "#/definitions/AnalysisResponse"
-            }
-          },
-          "400": {
-            "description": "Bad request - Invalid image or metrics",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "413": {
-            "description": "Payload too large - File exceeds 5MB limit",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "415": {
-            "description": "Unsupported media type - Only JPEG and PNG allowed",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
-            }
-          },
-          "422": {
-            "description": "Unprocessable entity - Missing required field",
-            "schema": {
-              "$ref": "#/definitions/ValidationErrorResponse"
-            }
-          },
-          "500": {
-            "description": "Internal server error",
-            "schema": {
-              "$ref": "#/definitions/ErrorResponse"
+            "description": "Detailed API health information",
+            "content": {
+              "application/json": {
+                "schema": {},
+                "examples": {
+                  "success": {
+                    "summary": "Detailed health status",
+                    "value": {
+                      "status": "healthy",
+                      "service": "image-insights-api",
+                      "version": "1.5.0"
+                    }
+                  }
+                }
+              }
             }
           }
         }
       }
     }
   },
-  "definitions": {
-    "HealthResponse": {
-      "type": "object",
-      "required": ["service", "version", "status"],
-      "properties": {
-        "service": {
-          "type": "string",
-          "example": "image-insights-api"
-        },
-        "version": {
-          "type": "string",
-          "example": "1.0.0"
-        },
-        "status": {
-          "type": "string",
-          "example": "healthy"
-        }
-      }
-    },
-    "AnalysisResponse": {
-      "type": "object",
-      "required": ["width", "height", "algorithm"],
-      "properties": {
-        "brightness_score": {
-          "type": "integer",
-          "description": "Brightness score from 0 (black) to 100 (white)",
-          "minimum": 0,
-          "maximum": 100,
-          "example": 57
-        },
-        "average_luminance": {
-          "type": "number",
-          "format": "float",
-          "description": "Average luminance value (0-255)",
-          "minimum": 0,
-          "maximum": 255,
-          "example": 146.28
-        },
-        "median_luminance": {
-          "type": "number",
-          "format": "float",
-          "description": "Median luminance value (0-255)",
-          "minimum": 0,
-          "maximum": 255,
-          "example": 165.88
-        },
-        "histogram": {
-          "type": "array",
-          "description": "Distribution of luminance values across 10 buckets",
-          "items": {
-            "$ref": "#/definitions/HistogramBucket"
+  "components": {
+    "schemas": {
+      "Body_analyze_image_v1_image_analysis_post": {
+        "properties": {
+          "image": {
+            "type": "string",
+            "format": "binary",
+            "title": "Image",
+            "description": "JPEG or PNG image to analyze"
           }
         },
-        "width": {
-          "type": "integer",
-          "description": "Original image width in pixels",
-          "example": 536
-        },
-        "height": {
-          "type": "integer",
-          "description": "Original image height in pixels",
-          "example": 354
-        },
-        "algorithm": {
-          "type": "string",
-          "description": "Algorithm used for luminance calculation",
-          "enum": ["rec709"],
-          "example": "rec709"
-        },
-        "processing_time_ms": {
-          "type": "number",
-          "format": "float",
-          "description": "Time taken to process the image in milliseconds",
-          "minimum": 0,
-          "example": 16.18
-        }
-      }
-    },
-    "HistogramBucket": {
-      "type": "object",
-      "required": ["range", "percent"],
-      "properties": {
-        "range": {
-          "type": "string",
-          "description": "Luminance range for this bucket",
-          "example": "0-25"
-        },
-        "percent": {
-          "type": "number",
-          "format": "float",
-          "description": "Percentage of pixels in this range",
-          "minimum": 0,
-          "maximum": 100,
-          "example": 2.1
-        }
-      }
-    },
-    "ErrorResponse": {
-      "type": "object",
-      "properties": {
-        "detail": {
-          "type": "object",
-          "properties": {
-            "error": {
-              "type": "string",
-              "description": "Error message",
-              "example": "Unsupported image type"
+        "type": "object",
+        "required": [
+          "image"
+        ],
+        "title": "Body_analyze_image_v1_image_analysis_post"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
             },
-            "allowed_types": {
-              "type": "array",
-              "items": {
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ImageUrlRequest": {
+        "properties": {
+          "url": {
+            "type": "string",
+            "title": "Url",
+            "description": "URL of the image to analyze (JPEG or PNG)"
+          },
+          "metrics": {
+            "anyOf": [
+              {
                 "type": "string"
               },
-              "example": ["image/jpeg", "image/png"]
-            },
-            "received_type": {
-              "type": "string",
-              "example": "image/gif"
-            },
-            "max_size_bytes": {
-              "type": "integer",
-              "example": 5242880
-            },
-            "received_size_bytes": {
-              "type": "integer",
-              "example": 6291456
-            },
-            "invalid_metrics": {
-              "type": "array",
-              "items": {
-                "type": "string"
+              {
+                "type": "null"
               }
-            },
-            "valid_metrics": {
-              "type": "array",
-              "items": {
+            ],
+            "title": "Metrics",
+            "description": "Comma-separated metrics: brightness, median, histogram"
+          },
+          "edge_mode": {
+            "anyOf": [
+              {
                 "type": "string"
               },
-              "example": ["brightness", "median", "histogram"]
-            },
-            "details": {
-              "type": "string",
-              "description": "Additional error details"
-            }
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edge Mode",
+            "description": "Edge-based brightness mode: left_right, top_bottom, or all (analyzes 10% of edges)"
           }
-        }
-      }
-    },
-    "ValidationErrorResponse": {
-      "type": "object",
-      "properties": {
-        "detail": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "type": {
-                "type": "string",
-                "example": "missing"
-              },
-              "loc": {
-                "type": "array",
-                "items": {
+        },
+        "type": "object",
+        "required": [
+          "url"
+        ],
+        "title": "ImageUrlRequest",
+        "description": "Request model for URL-based image analysis."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
                   "type": "string"
                 },
-                "example": ["body", "image"]
-              },
-              "msg": {
-                "type": "string",
-                "example": "Field required"
-              }
-            }
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
           }
-        }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
       }
     }
   }
