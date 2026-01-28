@@ -32,21 +32,32 @@ The Image Analysis API provides fast, deterministic image analysis metrics via a
 
 ### Endpoint
 
+**Upload-based analysis:**
 ```
 POST /v1/image/analysis
 ```
 
+**URL-based analysis:**
+```
+POST /v1/image/analysis/url
+```
+
 ### Request
 
-* Content-Type: `multipart/form-data`
-* Field: `image` (JPEG or PNG)
-* Optional query parameters:
+* Content-Type: `multipart/form-data` (for upload) or `application/json` (for URL)
+* Field: `image` (JPEG or PNG) for upload, or JSON body with `url` field
+* Optional query parameters (upload) or JSON fields (URL):
 
   * `metrics` (comma-separated)
 
     * `brightness` (default)
     * `median`
     * `histogram`
+  * `edge_mode` (optional)
+
+    * `left_right`
+    * `top_bottom`
+    * `all`
 
 ### Response
 
@@ -148,6 +159,8 @@ Planned future metrics:
 * Fully working Docker container
 * OpenAPI documentation
 * README with usage examples
+* URL-based image analysis with SSRF protection
+* Edge-based brightness analysis
 * Production-safe defaults
 
 ---

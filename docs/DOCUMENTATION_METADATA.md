@@ -27,7 +27,7 @@ The auto-generated OpenAPI specification now includes comprehensive metadata:
 
 ### Version
 - Automatically synced from [app/__version__.py](../app/__version__.py)
-- Current version: `1.5.0`
+- Current version: `1.6.0`
 
 ### Tag Descriptions
 Tags are defined with detailed descriptions in [app/main.py](../app/main.py):
