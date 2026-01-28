@@ -72,15 +72,22 @@ uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 - ✅ **No Data Retention**: After analysis completes, image data is garbage collected
 - ✅ **Safe Logging**: URLs are redacted, no pixel data is logged
 - ✅ **No Third-Party Sharing**: All processing is local to your deployment
+- ✅ **SSRF Protection**: URL-based analysis blocks private/local network addresses to prevent Server-Side Request Forgery attacks
 
 Each request is independent and isolated. What happens inside stays inside.
 
 ## 📖 API Usage
 
-### Endpoint
+### Endpoints
 
+**Upload-based analysis:**
 ```
 POST /v1/image/analysis
+```
+
+**URL-based analysis:**
+```
+POST /v1/image/analysis/url
 ```
 
 ### Basic Request
@@ -98,9 +105,22 @@ curl -X POST http://localhost:8080/v1/image/analysis \
   "average_luminance": 186.3,
   "width": 1920,
   "height": 1080,
-  "algorithm": "rec709"
+  "algorithm": "rec709",
+  "processing_time_ms": 45.23
 }
 ```
+
+### URL-Based Image Analysis
+
+Analyze an image directly from a URL:
+
+```bash
+curl -X POST http://localhost:8080/v1/image/analysis/url \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/photo.jpg"}'
+```
+
+**Security:** URLs pointing to private/local network addresses are blocked to prevent SSRF attacks.
 
 ### Request with All Metrics
 
@@ -137,7 +157,8 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
   "edge_mode": "left_right",
   "width": 1920,
   "height": 1080,
-  "algorithm": "rec709"
+  "algorithm": "rec709",
+  "processing_time_ms": 48.5
 }
 ```
 
@@ -162,7 +183,8 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
   ],
   "width": 1920,
   "height": 1080,
-  "algorithm": "rec709"
+  "algorithm": "rec709",
+  "processing_time_ms": 52.18
 }
 ```
 
@@ -183,6 +205,74 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
 | `all` | Analyze all four edges (10% from each side) |
 
 Edge mode helps determine background colors that blend well with image edges.
+
+### URL-Based Analysis Examples
+
+Analyze images directly from URLs with full metrics support:
+
+#### Basic URL Request
+
+```bash
+curl -X POST http://localhost:8080/v1/image/analysis/url \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://example.com/photo.jpg"}'
+```
+
+#### URL Request with All Metrics
+
+```bash
+curl -X POST http://localhost:8080/v1/image/analysis/url \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/photo.jpg",
+    "metrics": "brightness,median,histogram"
+  }'
+```
+
+#### URL Request with Edge Mode
+
+```bash
+curl -X POST http://localhost:8080/v1/image/analysis/url \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/photo.jpg",
+    "metrics": "brightness,median",
+    "edge_mode": "left_right"
+  }'
+```
+
+**Python Example:**
+
+```python
+import requests
+
+url = "http://localhost:8080/v1/image/analysis/url"
+payload = {
+    "url": "https://example.com/photo.jpg",
+    "metrics": "brightness,median,histogram",
+    "edge_mode": "all"
+}
+
+response = requests.post(url, json=payload)
+data = response.json()
+print(f"Brightness Score: {data['brightness_score']}")
+print(f"Processing Time: {data['processing_time_ms']}ms")
+```
+
+**JavaScript/Node.js Example:**
+
+```javascript
+const axios = require('axios');
+
+axios.post('http://localhost:8080/v1/image/analysis/url', {
+  url: 'https://example.com/photo.jpg',
+  metrics: 'brightness,median',
+  edge_mode: 'all'
+}).then(response => {
+  console.log('Brightness Score:', response.data.brightness_score);
+  console.log('Processing Time:', response.data.processing_time_ms + 'ms');
+});
+```
 
 ## 📚 API Documentation
 
@@ -255,16 +345,19 @@ pytest --cov=app --cov-report=html
 image-insights-api/
 ├── app/
 │   ├── __init__.py
+│   ├── __version__.py       # Version management
 │   ├── main.py              # FastAPI application
 │   ├── config.py            # Configuration settings
 │   ├── api/
 │   │   ├── __init__.py
-│   │   └── image_analysis.py  # API endpoint
+│   │   ├── image_analysis.py  # API endpoints
+│   │   └── responses.py     # Response models
 │   └── core/
 │       ├── __init__.py
 │       ├── luminance.py     # Brightness calculations
 │       ├── resize.py        # Image resizing
 │       ├── histogram.py     # Histogram analysis
+│       ├── url_handler.py   # URL downloading & SSRF protection
 │       └── validators.py    # Input validation
 ├── tests/
 │   ├── __init__.py
@@ -272,8 +365,10 @@ image-insights-api/
 │   ├── test_api.py          # API tests
 │   └── test_core.py         # Core module tests
 ├── docs/
+│   ├── API_DOC.md
 │   ├── PRD.md
-│   └── TECHNICALS.md
+│   ├── TECHNICALS.md
+│   └── swagger.json
 ├── Dockerfile
 ├── docker-compose.yml
 ├── requirements.txt
