@@ -1,0 +1,88 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Development and IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+.env
+.env.local
+.dev.vars*
+
+# Testing and coverage
+tests/
+pytest.ini
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Node/NPM (Cloudflare specific - only installed for Workers, not container)
+node_modules/
+package-lock.json
+yarn.lock
+.npm/
+
+# Python related
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Project documentation (not needed in container)
+docs/
+*.md
+README.md
+LICENSE
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.circleci/
+
+# Docker/Container related
+.dockerignore
+Dockerfile
+docker-compose.yml
+.docker/
+
+# Misc project files
+*.txt
+!requirements.txt
+Makefile
+tox.ini
+
+# Temporary files
+*.tmp
+*.bak
+*.log
