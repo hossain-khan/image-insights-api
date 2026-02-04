@@ -162,7 +162,7 @@ This will:
 While `wrangler dev` is running:
 
 ```bash
-# Basic health check
+# Basic health check (no auth required in local dev)
 curl http://localhost:8787/health
 
 # Analyze an image
@@ -173,6 +173,8 @@ curl -X POST http://localhost:8787/v1/image/analysis \
 curl -X POST "http://localhost:8787/v1/image/analysis?metrics=brightness,median,histogram" \
   -F "image=@/path/to/photo.jpg"
 ```
+
+**Note:** Authentication is not enforced in local development. Once deployed to production, all requests will require the X-API-Key header.
 
 ### Verify Container is Running
 
@@ -237,16 +239,29 @@ https://image-insights-api.<your-account>.workers.dev
 
 ### Test Production
 
+**All requests require the X-API-Key header:**
+
 ```bash
-# Replace with your actual Workers.dev URL
+# Replace with your actual Workers.dev URL and API key
 WORKER_URL="https://image-insights-api.YOUR_ACCOUNT.workers.dev"
+API_KEY="YOUR_SECRET_VALUE"
 
 # Health check
-curl $WORKER_URL/health
+curl -H "X-API-Key: $API_KEY" $WORKER_URL/health
 
 # Analyze image
-curl -X POST "$WORKER_URL/v1/image/analysis?metrics=brightness" \
+curl -H "X-API-Key: $API_KEY" \
+  -X POST "$WORKER_URL/v1/image/analysis?metrics=brightness" \
   -F "image=@/path/to/photo.jpg"
+
+# Analyze from URL
+curl -H "X-API-Key: $API_KEY" \
+  -X POST "$WORKER_URL/v1/image/analysis/url" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/photo.jpg",
+    "metrics": "brightness,median,histogram"
+  }'
 ```
 
 ### Monitor Production
@@ -302,6 +317,37 @@ max_instances = 20   # Handle 20 concurrent image analysis requests
 **Reference:** [Instance Types & Scaling](https://developers.cloudflare.com/containers/platform-details/instance-types/) | [Scaling Guide](https://developers.cloudflare.com/containers/manage/scaling/)
 
 ## Environment Variables and Secrets
+
+### API Key Authentication
+
+The deployed API requires X-API-Key header authentication for all requests.
+
+**Setup:**
+
+```bash
+# Create the API key secret (one-time setup)
+wrangler secret put IMAGE_INSIGHTS_API_KEY
+
+# You will be prompted to enter your secret value
+# Example: TxCUhugXpwLSJORgbAf1l20o6bpYPJNQ
+
+# Verify the secret is configured
+wrangler secret list
+```
+
+**Local Development:**
+When running locally with `wrangler dev`, authentication is not enforced. The API key check only applies when deployed to Cloudflare.
+
+**Production Usage:**
+
+All requests to the deployed API must include the `X-API-Key` header:
+
+```bash
+curl -H "X-API-Key: YOUR_SECRET_VALUE" \
+  https://image-insights-api.<your-account>.workers.dev/health
+```
+
+**Reference:** [Secrets Management](https://developers.cloudflare.com/workers/configuration/secrets/)
 
 ### Container Environment Variables
 
