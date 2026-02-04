@@ -21,6 +21,28 @@ http://localhost:8080
 
 ---
 
+## Authentication
+
+**All endpoints require API key authentication** when deployed to production (Cloudflare).
+
+### X-API-Key Header
+
+Include your API key in the `X-API-Key` header on all requests:
+
+```
+X-API-Key: YOUR_API_KEY
+```
+
+**Example:**
+```bash
+curl -H "X-API-Key: YOUR_API_KEY" https://image-insights-api.hk-c91.workers.dev/health
+```
+
+**Local Development (no auth required):**
+When running locally with `uvicorn`, authentication is not enforced. The API key check only applies when deployed to Cloudflare.
+
+---
+
 ## Endpoints
 
 ### Health Check
@@ -138,6 +160,14 @@ Edge mode is useful for determining background colors that blend well with the i
 
 ```bash
 curl -X POST http://localhost:8080/v1/image/analysis \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -F "image=@photo.jpg"
+```
+
+**For production (Cloudflare):**
+```bash
+curl -X POST https://image-insights-api.hk-c91.workers.dev/v1/image/analysis \
+  -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@photo.jpg"
 ```
 
@@ -157,6 +187,7 @@ curl -X POST http://localhost:8080/v1/image/analysis \
 
 ```bash
 curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@photo.jpg"
 ```
 
@@ -177,6 +208,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median"
 
 ```bash
 curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median,histogram" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@photo.jpg"
 ```
 
@@ -213,6 +245,7 @@ Edge mode analyzes the brightness of specific image edges to help determine back
 
 ```bash
 curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=left_right" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@photo.jpg"
 ```
 
@@ -235,6 +268,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=left_right" \
 
 ```bash
 curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=top_bottom" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@photo.jpg"
 ```
 
@@ -257,6 +291,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=top_bottom" \
 
 ```bash
 curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@photo.jpg"
 ```
 
@@ -279,6 +314,7 @@ curl -X POST "http://localhost:8080/v1/image/analysis?edge_mode=all" \
 
 ```bash
 curl -X POST "http://localhost:8080/v1/image/analysis?metrics=brightness,median&edge_mode=left_right" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -F "image=@photo.jpg"
 ```
 
@@ -305,9 +341,10 @@ import requests
 
 url = "http://localhost:8080/v1/image/analysis"
 params = {"metrics": "brightness,median,histogram"}
+headers = {"X-API-Key": "YOUR_API_KEY"}
 
 with open("photo.jpg", "rb") as f:
-    response = requests.post(url, params=params, files={"image": f})
+    response = requests.post(url, params=params, files={"image": f}, headers=headers)
 
 data = response.json()
 print(f"Brightness Score: {data['brightness_score']}")
@@ -325,7 +362,10 @@ const form = new FormData();
 form.append('image', fs.createReadStream('photo.jpg'));
 
 axios.post('http://localhost:8080/v1/image/analysis?metrics=brightness', form, {
-  headers: form.getHeaders()
+  headers: {
+    ...form.getHeaders(),
+    'X-API-Key': 'YOUR_API_KEY'
+  }
 }).then(response => {
   console.log('Brightness Score:', response.data.brightness_score);
 });
@@ -337,6 +377,19 @@ axios.post('http://localhost:8080/v1/image/analysis?metrics=brightness', form, {
 
 ```bash
 curl -X POST "http://localhost:8080/v1/image/analysis/url" \
+  -H "X-API-Key: YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://example.com/photo.jpg",
+    "metrics": "brightness,median,histogram",
+    "edge_mode": "all"
+  }'
+```
+
+**For production (Cloudflare):**
+```bash
+curl -X POST "https://image-insights-api.hk-c91.workers.dev/v1/image/analysis/url" \
+  -H "X-API-Key: YOUR_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "url": "https://example.com/photo.jpg",
@@ -383,8 +436,9 @@ payload = {
     "url": "https://example.com/photo.jpg",
     "metrics": "brightness,median,histogram"
 }
+headers = {"X-API-Key": "YOUR_API_KEY"}
 
-response = requests.post(url, json=payload)
+response = requests.post(url, json=payload, headers=headers)
 data = response.json()
 print(f"Brightness Score: {data['brightness_score']}")
 print(f"Average Luminance: {data['average_luminance']}")
@@ -398,6 +452,8 @@ const axios = require('axios');
 axios.post('http://localhost:8080/v1/image/analysis/url', {
   url: 'https://example.com/photo.jpg',
   metrics: 'brightness,median'
+}, {
+  headers: {'X-API-Key': 'YOUR_API_KEY'}
 }).then(response => {
   console.log('Brightness Score:', response.data.brightness_score);
 });
