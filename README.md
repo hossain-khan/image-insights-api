@@ -378,7 +378,37 @@ image-insights-api/
 
 ## 🌐 Deployment
 
-### Docker Compose (Easiest)
+### Cloudflare Containers 🚀 (Recommended for Global Scale)
+
+Deploy to Cloudflare's global network with automatic scaling and zero infrastructure management:
+
+```bash
+# Install dependencies
+npm install
+
+# Authenticate with Cloudflare
+wrangler login
+
+# Deploy to Cloudflare Containers
+npm run deploy
+```
+
+**Benefits:**
+- 🌍 Global distribution across 300+ cities
+- 🚀 Automatic scaling (handle spikes with no configuration)
+- 💰 Pay only for active instances (~$0.04/vCPU/hour)
+- 🔒 Privacy-first: Ephemeral disk aligns with our privacy guarantee
+- ⚡ Fast cold starts (2-3 seconds)
+- 📊 Built-in monitoring and logs
+
+For detailed Cloudflare setup and deployment instructions, see **[CLOUDFLARE_DEPLOYMENT.md](CLOUDFLARE_DEPLOYMENT.md)**.
+
+After deployment, your API will be available at:
+```
+https://image-insights-api.<your-account>.workers.dev
+```
+
+### Docker Compose (Easiest for Self-Hosted)
 
 The included `docker-compose.yml` is ready for production deployment:
 
@@ -400,6 +430,7 @@ docker compose pull && docker compose up -d
 
 The API is stateless and can be deployed to:
 
+- ☁️ **Cloudflare Containers** (recommended for global scale)
 - AWS ECS / Fargate
 - Google Cloud Run
 - Azure Container Apps

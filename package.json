@@ -1,0 +1,28 @@
+{
+  "name": "image-insights-api",
+  "version": "1.6.0",
+  "description": "Cloudflare Workers wrapper for Image Insights API container",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --env \"\"",
+    "build": "wrangler deploy --dry-run --env \"\""
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "containers",
+    "image-analysis",
+    "brightness"
+  ],
+  "author": "Hossain Khan",
+  "license": "MIT",
+  "dependencies": {
+    "@cloudflare/containers": "^0.1.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.62.0",
+    "@cloudflare/workers-types": "^4.20250203.0",
+    "typescript": "^5.7.0"
+  }
+}
