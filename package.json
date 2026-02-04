@@ -5,8 +5,8 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "build": "wrangler deploy --dry-run"
+    "deploy": "wrangler deploy --env \"\"",
+    "build": "wrangler deploy --dry-run --env \"\""
   },
   "keywords": [
     "cloudflare",
