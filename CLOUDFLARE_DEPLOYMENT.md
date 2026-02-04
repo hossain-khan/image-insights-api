@@ -338,20 +338,20 @@ export CLOUDFLARE_API_TOKEN=<token>
 
 ### Typical Usage
 
-For moderate traffic (100 requests/day):
+For moderate traffic (around 100 requests/day):
 
 | Component | Cost/Month |
-|-----------|-----------|
-| Workers | Free (under 100k/day) |
-| Container instances | ~$5-15 |
+|-----------|----------|
+| Workers | Typically free for low-volume workloads (see Cloudflare Workers free tier) |
+| Container instances | ~$5-15 (depends on runtime hours and vCPU allocation) |
 | Image storage | <$1 |
 | **Total** | **~$5-20** |
 
 ### Factors
 
-- **Container runtime**: $0.16/vCPU/hour when running
+- **Container runtime pricing**: Usage-based billing (per vCPU / runtime) — see [Cloudflare Containers pricing](https://developers.cloudflare.com/containers/platform-details/pricing/) for current rates
 - **Pay only for running instances** (not provisioned/sleeping)
-- **Free tier**: First 50,000 requests/month
+- **Free tiers**: Cloudflare offers generous free tiers for Workers and related services — always confirm current limits and quotas in the [Cloudflare dashboard](https://dash.cloudflare.com/) and [official pricing docs](https://developers.cloudflare.com/containers/platform-details/pricing/)
 
 ## Next Steps
 

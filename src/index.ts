@@ -28,10 +28,9 @@ export class ImageInsightsContainer extends Container {
   sleepAfter = "10m";
 
   // Environment variables passed to the container at startup
-  envVars = {
-    // Enable detailed logging with request info and processing times
-    ENABLE_DETAILED_LOGGING: "true",
-  };
+  // Note: ENABLE_DETAILED_LOGGING can be configured via environment variables
+  // It defaults to the FastAPI app's default behavior if not explicitly set
+  envVars: Record<string, string> = {};
 
   /**
    * Called when the container successfully starts
@@ -70,22 +69,45 @@ interface Env {
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
-      // Use a default container instance named "default"
-      // All requests are routed to this single container instance
+      // Shard requests across multiple Durable Object instances for better concurrency
+      // This enables Cloudflare to spin up multiple container instances under load
+      // Use a hash of the request path to distribute traffic across N buckets
+      const url = new URL(request.url);
+      const pathHash = url.pathname
+        .split("")
+        .reduce((acc, char) => acc + char.charCodeAt(0), 0);
+      const shardCount = 10; // Match max_instances in wrangler.toml
+      const shardId = pathHash % shardCount;
+      const containerId = `container-${shardId}`;
+
       const container = env.IMAGE_INSIGHTS_CONTAINER.get(
-        env.IMAGE_INSIGHTS_CONTAINER.idFromName("default")
+        env.IMAGE_INSIGHTS_CONTAINER.idFromName(containerId)
       );
 
       // Forward the incoming request to the container
       // The container will handle the request and return a response
       return await container.fetch(request);
     } catch (error) {
-      console.error("Worker error:", error);
+      // Generate a request ID for troubleshooting
+      const requestId =
+        typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : Date.now().toString(36);
+
+      // Log detailed error server-side
+      console.error("Worker error:", {
+        requestId,
+        url: request.url,
+        method: request.method,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      // Return generic error to client with request ID for troubleshooting
       return new Response(
         JSON.stringify({
           error: "Internal Server Error",
-          message:
-            error instanceof Error ? error.message : "Unknown error occurred",
+          message: "An unexpected error occurred. Please try again later.",
+          requestId,
         }),
         {
           status: 500,
