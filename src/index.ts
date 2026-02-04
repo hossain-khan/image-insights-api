@@ -72,6 +72,7 @@ export class ImageInsightsContainer extends Container {
  */
 interface Env {
   IMAGE_INSIGHTS_CONTAINER: DurableObjectNamespace;
+  IMAGE_INSIGHTS_API_KEY?: string; // Optional API key for authentication
 }
 
 /**
@@ -80,10 +81,28 @@ interface Env {
  *
  * Request Handling: https://developers.cloudflare.com/workers/runtime-apis/web-crypto/
  * Error Handling Best Practices: https://developers.cloudflare.com/workers/platform/errors/
+ * Secrets Management: https://developers.cloudflare.com/workers/configuration/secrets/
  */
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
+      // API Key Authentication (if configured)
+      if (env.IMAGE_INSIGHTS_API_KEY) {
+        const apiKey = request.headers.get("X-API-Key");
+        if (!apiKey || apiKey !== env.IMAGE_INSIGHTS_API_KEY) {
+          return new Response(
+            JSON.stringify({
+              error: "Unauthorized",
+              message: "Missing or invalid API key. Please provide X-API-Key header.",
+            }),
+            {
+              status: 401,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+      }
+
       // Shard requests across multiple Durable Object instances for better concurrency
       // This enables Cloudflare to spin up multiple container instances under load
       // Use a hash of the request path to distribute traffic across N buckets
@@ -91,7 +110,7 @@ export default {
       const pathHash = url.pathname
         .split("")
         .reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const shardCount = 10; // Match max_instances in wrangler.toml
+      const shardCount = 3; // Match max_instances in wrangler.toml
       const shardId = pathHash % shardCount;
       const containerId = `container-${shardId}`;
 
