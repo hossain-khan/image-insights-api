@@ -1,5 +1,8 @@
 # Cloudflare Workers and Containers Configuration
-# Documentation: https://developers.cloudflare.com/workers/wrangler/configuration/
+# Official Documentation:
+#   - Wrangler Configuration: https://developers.cloudflare.com/workers/wrangler/configuration/
+#   - Containers Configuration: https://developers.cloudflare.com/containers/configuration/
+#   - Building & Deploying: https://developers.cloudflare.com/containers/deploy/
 
 # Basic Configuration
 name = "image-insights-api"
@@ -18,6 +21,7 @@ vars = { ENVIRONMENT = "production" }
 
 # Container Configuration
 # Runs the Image Insights API as a Cloudflare Container
+# Reference: https://developers.cloudflare.com/containers/reference/configuration/
 [[containers]]
 image = "./Dockerfile"
 class_name = "ImageInsightsContainer"
@@ -26,17 +30,20 @@ max_instances = 10  # Maximum concurrent container instances
 
 # Durable Objects Configuration
 # Container instances are backed by Durable Objects
+# Reference: https://developers.cloudflare.com/durable-objects/configuration/
 [durable_objects]
 bindings = [
   { name = "IMAGE_INSIGHTS_CONTAINER", class_name = "ImageInsightsContainer" }
 ]
 
 # Required migration for container-enabled Durable Objects
+# Migrations Guide: https://developers.cloudflare.com/durable-objects/reference/sqlite-migration/
 [[migrations]]
 tag = "v1"
 new_sqlite_classes = ["ImageInsightsContainer"]
 
 # Development server settings
+# Local Development: https://developers.cloudflare.com/workers/wrangler/commands/#dev
 [env.development.dev]
 ip = "localhost"
 port = 8787
@@ -44,7 +51,9 @@ local_protocol = "http"
 enable_containers = true
 
 # Observability - Enable logs for production monitoring
+# Observability: https://developers.cloudflare.com/workers/observability/logging/
 observability = { enabled = true }
 
 # Node.js compatibility for container runtime
+# Compatibility: https://developers.cloudflare.com/workers/runtime-apis/nodejs/
 compatibility_flags = ["nodejs_compat_v2"]

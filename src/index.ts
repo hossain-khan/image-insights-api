@@ -4,6 +4,13 @@
  * This Worker routes all incoming requests to the containerized FastAPI application.
  * Each container instance is backed by a Durable Object that manages its lifecycle.
  *
+ * Official Documentation:
+ * - Cloudflare Containers: https://developers.cloudflare.com/containers/
+ * - Workers & Containers Architecture: https://developers.cloudflare.com/containers/architecture/
+ * - Getting Started: https://developers.cloudflare.com/containers/get-started/
+ * - Managing Containers: https://developers.cloudflare.com/containers/manage/
+ * - Durable Objects: https://developers.cloudflare.com/durable-objects/
+ *
  * Architecture:
  * - Worker receives incoming HTTP request
  * - Routes request to Container instance via Durable Object
@@ -18,6 +25,9 @@ import { Container } from "@cloudflare/containers";
  *
  * This class extends the Container class to configure how the containerized
  * FastAPI application runs on Cloudflare.
+ *
+ * Container Lifecycle: https://developers.cloudflare.com/containers/configuration/lifecycle-events/
+ * Container Configuration: https://developers.cloudflare.com/containers/configuration/
  */
 export class ImageInsightsContainer extends Container {
   // Port the FastAPI application listens on
@@ -57,6 +67,8 @@ export class ImageInsightsContainer extends Container {
 /**
  * Durable Object binding for the container
  * Defined in wrangler.toml and bound as IMAGE_INSIGHTS_CONTAINER
+ *
+ * Bindings Reference: https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
  */
 interface Env {
   IMAGE_INSIGHTS_CONTAINER: DurableObjectNamespace;
@@ -65,6 +77,9 @@ interface Env {
 /**
  * Main Worker fetch handler
  * Routes all incoming requests to the container instance
+ *
+ * Request Handling: https://developers.cloudflare.com/workers/runtime-apis/web-crypto/
+ * Error Handling Best Practices: https://developers.cloudflare.com/workers/platform/errors/
  */
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {

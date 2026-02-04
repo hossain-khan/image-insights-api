@@ -2,6 +2,12 @@
 
 This directory contains the configuration for deploying **Image Insights API** to **Cloudflare Containers**.
 
+**Official Documentation:**
+- [Cloudflare Containers Documentation](https://developers.cloudflare.com/containers/)
+- [Architecture & Concepts](https://developers.cloudflare.com/containers/architecture/)
+- [Configuration Reference](https://developers.cloudflare.com/containers/configuration/)
+- [Deployment Guide](https://developers.cloudflare.com/containers/deploy/)
+
 ## Architecture Overview
 
 The deployment consists of:
@@ -92,6 +98,8 @@ Main configuration for Workers and Containers:
 
 ### `src/index.ts`
 
+### `src/index.ts`
+
 Worker entry point that:
 
 - Defines `ImageInsightsContainer` class configuration
@@ -99,12 +107,31 @@ Worker entry point that:
 - Manages container lifecycle (startup, shutdown, errors)
 - Handles error cases gracefully
 
+**References:**
+- [Container Lifecycle Events](https://developers.cloudflare.com/containers/configuration/lifecycle-events/)
+- [Request Handling](https://developers.cloudflare.com/workers/runtime-apis/request/)
+- [Error Handling](https://developers.cloudflare.com/workers/platform/errors/)
+
+### `wrangler.toml`
+
+Cloudflare configuration specifying:
+
+- Container image location and class name
+- Instance type (basic: 1/4 vCPU, 1 GiB RAM, 4 GB disk)
+- Maximum number of concurrent instances (10)
+- Durable Object bindings and migrations
+
+**References:**
+- [Wrangler Configuration](https://developers.cloudflare.com/workers/wrangler/configuration/)
+- [Container Reference](https://developers.cloudflare.com/containers/reference/configuration/)
+- [Durable Objects Configuration](https://developers.cloudflare.com/durable-objects/configuration/)
+
 ### `package.json`
 
 Dependencies:
 - `@cloudflare/containers`: Container class and helpers
-- `wrangler`: Cloudflare CLI
-- `@cloudflare/workers-types`: TypeScript types for Workers
+- `wrangler`: Cloudflare CLI ([Wrangler Documentation](https://developers.cloudflare.com/workers/wrangler/))
+- `@cloudflare/workers-types`: TypeScript types for Workers ([Types Reference](https://developers.cloudflare.com/workers/runtime-apis/))
 
 ## Local Development
 
@@ -127,6 +154,8 @@ This will:
 2. Start a local Wrangler dev server (usually `http://localhost:8787`)
 3. Spin up a container instance
 4. Make the FastAPI app available through the Worker
+
+**Reference:** [Local Development with Wrangler](https://developers.cloudflare.com/workers/wrangler/commands/#dev)
 
 ### Test Locally
 
@@ -167,6 +196,8 @@ npm run deploy
 wrangler deploy
 ```
 
+**Reference:** [Deploying with Wrangler](https://developers.cloudflare.com/containers/deploy/)
+
 This will:
 
 1. **Build** the Docker image using your Dockerfile
@@ -194,6 +225,8 @@ wrangler containers list
 wrangler containers images list
 ```
 
+**Reference:** [Wrangler Commands](https://developers.cloudflare.com/workers/wrangler/commands/) | [Managing Containers](https://developers.cloudflare.com/containers/manage/)
+
 ## Production Deployment
 
 After deploying, your API will be available at:
@@ -218,6 +251,8 @@ curl -X POST "$WORKER_URL/v1/image/analysis?metrics=brightness" \
 
 ### Monitor Production
 
+**Reference:** [Cloudflare Analytics](https://developers.cloudflare.com/workers/observability/logging/) | [Real-time Logs](https://developers.cloudflare.com/workers/observability/logging/real-time-logs/)
+
 View logs and metrics:
 
 1. **Cloudflare Dashboard**
@@ -234,6 +269,8 @@ View logs and metrics:
    wrangler tail --filter '{ "where": { "ServiceName": "IMAGE_INSIGHTS_CONTAINER" } }'
    ```
 
+   **Reference:** [Wrangler Tail Command](https://developers.cloudflare.com/workers/wrangler/commands/#tail) | [Tail API](https://developers.cloudflare.com/workers/reference/tail-api/)
+
 ## Instance Types and Scaling
 
 ### Current Configuration: `basic`
@@ -241,7 +278,7 @@ View logs and metrics:
 - **vCPU**: 1/4 (256 millicores)
 - **Memory**: 1 GiB
 - **Disk**: 4 GB
-- **Cost**: ~$0.04/vCPU/hour
+- **Cost**: Refer to [Cloudflare Containers Pricing](https://developers.cloudflare.com/containers/platform-details/pricing/)
 - **Best for**: Image processing at moderate scale
 
 ### Scaling Options
@@ -262,6 +299,8 @@ Increase `max_instances` for more concurrent requests:
 max_instances = 20   # Handle 20 concurrent image analysis requests
 ```
 
+**Reference:** [Instance Types & Scaling](https://developers.cloudflare.com/containers/platform-details/instance-types/) | [Scaling Guide](https://developers.cloudflare.com/containers/manage/scaling/)
+
 ## Environment Variables and Secrets
 
 ### Container Environment Variables
@@ -269,11 +308,13 @@ max_instances = 20   # Handle 20 concurrent image analysis requests
 Configured in `src/index.ts`:
 
 ```typescript
-envVars = {
-  ENABLE_DETAILED_LOGGING: "true",
-  // Add more as needed
+envVars: Record<string, string> = {
+  // Configure environment variables based on your needs
+  // Example: ENABLE_DETAILED_LOGGING: "true"
 };
 ```
+
+**Reference:** [Container Configuration](https://developers.cloudflare.com/containers/configuration/#environment-variables)
 
 ### Secret Bindings
 
@@ -286,6 +327,8 @@ wrangler secret put MY_SECRET
 # Use in Worker code
 const secret = env.MY_SECRET;
 ```
+
+**Reference:** [Secrets Management](https://developers.cloudflare.com/workers/configuration/secrets/) | [Environment Variables](https://developers.cloudflare.com/workers/configuration/environment-variables/)
 
 ## Troubleshooting
 
@@ -302,6 +345,8 @@ docker build --platform linux/amd64 .
 wrangler dev
 ```
 
+**Reference:** [Debugging Workers](https://developers.cloudflare.com/workers/platform/debugging-guide/) | [Tail Logs](https://developers.cloudflare.com/workers/observability/logging/real-time-logs/)
+
 ### Image is too large
 
 Cloudflare Container images have a **20 GB limit per image**. The `.dockerignore` file helps reduce size by excluding:
@@ -309,6 +354,8 @@ Cloudflare Container images have a **20 GB limit per image**. The `.dockerignore
 - Testing files and directories
 - Git history
 - Documentation
+
+**Reference:** [Image Size Limits](https://developers.cloudflare.com/containers/platform-details/limits/)
 - Python caches
 
 Current estimated size: ~150-200 MB
@@ -320,6 +367,8 @@ Cold starts (2-3 seconds) are normal for containers. To improve:
 1. Increase `max_instances` to keep more running
 2. Use a smaller base image (e.g., Python Alpine)
 3. Optimize application startup time
+
+**Reference:** [Performance Optimization](https://developers.cloudflare.com/containers/manage/performance/) | [Cold Start Guide](https://developers.cloudflare.com/containers/troubleshooting/cold-starts/)
 
 ### Authentication issues
 
@@ -334,6 +383,8 @@ wrangler login
 export CLOUDFLARE_API_TOKEN=<token>
 ```
 
+**Reference:** [Wrangler Authentication](https://developers.cloudflare.com/workers/wrangler/commands/#login) | [API Token Management](https://dash.cloudflare.com/profile/api-tokens)
+
 ## Cost Estimation
 
 ### Typical Usage
@@ -342,8 +393,8 @@ For moderate traffic (around 100 requests/day):
 
 | Component | Cost/Month |
 |-----------|----------|
-| Workers | Typically free for low-volume workloads (see Cloudflare Workers free tier) |
-| Container instances | ~$5-15 (depends on runtime hours and vCPU allocation) |
+| Workers | Typically free for low-volume workloads (see [Workers Pricing](https://developers.cloudflare.com/workers/platform/pricing/)) |
+| Container instances | ~$5-15 (usage-based, depends on runtime hours) |
 | Image storage | <$1 |
 | **Total** | **~$5-20** |
 
@@ -351,14 +402,23 @@ For moderate traffic (around 100 requests/day):
 
 - **Container runtime pricing**: Usage-based billing (per vCPU / runtime) — see [Cloudflare Containers pricing](https://developers.cloudflare.com/containers/platform-details/pricing/) for current rates
 - **Pay only for running instances** (not provisioned/sleeping)
-- **Free tiers**: Cloudflare offers generous free tiers for Workers and related services — always confirm current limits and quotas in the [Cloudflare dashboard](https://dash.cloudflare.com/) and [official pricing docs](https://developers.cloudflare.com/containers/platform-details/pricing/)
+- **Free tiers**: Cloudflare offers generous free tiers — always confirm current limits in the [dashboard](https://dash.cloudflare.com/) and [official pricing docs](https://developers.cloudflare.com/containers/platform-details/pricing/)
+
+**Reference:** [Containers Pricing](https://developers.cloudflare.com/containers/platform-details/pricing/) | [Billing Overview](https://developers.cloudflare.com/billing/)
 
 ## Next Steps
 
 1. ✅ Review and customize configuration in `wrangler.toml`
 2. ✅ Test locally: `npm run dev`
 3. ✅ Deploy to production: `npm run deploy`
-4. ✅ Monitor in Cloudflare Dashboard
+4. ✅ Monitor in [Cloudflare Dashboard](https://dash.cloudflare.com/)
+
+## Additional Resources
+
+- **Getting Started**: [Cloudflare Containers Quickstart](https://developers.cloudflare.com/containers/get-started/)
+- **API Reference**: [REST API Documentation](https://developers.cloudflare.com/api/resources/)
+- **Community**: [Cloudflare Community Forums](https://community.cloudflare.com/)
+- **Support**: [Cloudflare Support](https://support.cloudflare.com/)
 5. ✅ Optimize based on metrics and usage
 
 ## Useful Resources
