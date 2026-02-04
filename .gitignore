@@ -80,7 +80,6 @@ target/
 
 # Node.js / NPM (for Cloudflare Workers)
 node_modules/
-package-lock.json
 yarn.lock
 dist/
 .wrangler/
