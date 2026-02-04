@@ -21,16 +21,16 @@ vars = { ENVIRONMENT = "production" }
 
 # Container Configuration
 # Runs the Image Insights API as a Cloudflare Container
-# Reference: https://developers.cloudflare.com/containers/reference/configuration/
+# Reference: https://developers.cloudflare.com/containers/platform-details/limits/
 [[containers]]
 image = "./Dockerfile"
 class_name = "ImageInsightsContainer"
 instance_type = "basic"  # 1/4 vCPU, 1 GiB RAM, 4 GB disk - suitable for image processing
-max_instances = 10  # Maximum concurrent container instances
+max_instances = 3  # Maximum concurrent container instances
 
 # Durable Objects Configuration
 # Container instances are backed by Durable Objects
-# Reference: https://developers.cloudflare.com/durable-objects/configuration/
+# Reference: https://developers.cloudflare.com/durable-objects/reference/glossary/
 [durable_objects]
 bindings = [
   { name = "IMAGE_INSIGHTS_CONTAINER", class_name = "ImageInsightsContainer" }
