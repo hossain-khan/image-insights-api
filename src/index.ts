@@ -72,7 +72,7 @@ export class ImageInsightsContainer extends Container {
  */
 interface Env {
   IMAGE_INSIGHTS_CONTAINER: DurableObjectNamespace;
-  API_KEY?: string; // Optional API key for authentication
+  IMAGE_INSIGHTS_API_KEY?: string; // Optional API key for authentication
 }
 
 /**
@@ -87,9 +87,9 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     try {
       // API Key Authentication (if configured)
-      if (env.API_KEY) {
+      if (env.IMAGE_INSIGHTS_API_KEY) {
         const apiKey = request.headers.get("X-API-Key");
-        if (!apiKey || apiKey !== env.API_KEY) {
+        if (!apiKey || apiKey !== env.IMAGE_INSIGHTS_API_KEY) {
           return new Response(
             JSON.stringify({
               error: "Unauthorized",
