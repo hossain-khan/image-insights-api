@@ -26,7 +26,7 @@ vars = { ENVIRONMENT = "production" }
 image = "./Dockerfile"
 class_name = "ImageInsightsContainer"
 instance_type = "basic"  # 1/4 vCPU, 1 GiB RAM, 4 GB disk - suitable for image processing
-max_instances = 10  # Maximum concurrent container instances
+max_instances = 3  # Maximum concurrent container instances
 
 # Durable Objects Configuration
 # Container instances are backed by Durable Objects
