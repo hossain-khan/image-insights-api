@@ -18,7 +18,7 @@
   "author": "Hossain Khan",
   "license": "MIT",
   "dependencies": {
-    "@cloudflare/containers": "^1.0.0"
+    "@cloudflare/containers": "^0.1.0"
   },
   "devDependencies": {
     "wrangler": "^3.83.0",
