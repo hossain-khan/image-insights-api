@@ -35,21 +35,21 @@ export class ImageInsightsContainer extends Container {
   /**
    * Called when the container successfully starts
    */
-  override onStart() {
+  onStart() {
     console.log("🚀 Image Insights Container started successfully");
   }
 
   /**
    * Called when the container is shutting down
    */
-  override onStop() {
+  onStop() {
     console.log("🛑 Image Insights Container shutting down");
   }
 
   /**
    * Called when the container encounters an error
    */
-  override onError(error: unknown) {
+  onError(error: unknown) {
     console.error("❌ Image Insights Container error:", error);
   }
 }
