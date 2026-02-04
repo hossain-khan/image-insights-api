@@ -103,7 +103,7 @@ jobs:
         continue-on-error: true
 
       - name: Validate wrangler configuration
-        run: npx wrangler publish --dry-run
+        run: npx wrangler deploy --dry-run
 
   docker:
     name: Docker Build
