@@ -22,7 +22,7 @@ vars = { ENVIRONMENT = "production" }
 # Container Configuration
 # Runs the Image Insights API as a Cloudflare Container
 # Reference: https://developers.cloudflare.com/containers/reference/configuration/
-[containers]
+[[containers]]
 image = "./Dockerfile"
 class_name = "ImageInsightsContainer"
 instance_type = "basic"  # 1/4 vCPU, 1 GiB RAM, 4 GB disk - suitable for image processing
