@@ -339,6 +339,59 @@ pytest
 pytest --cov=app --cov-report=html
 ```
 
+## 📊 Performance Benchmarks
+
+The API is benchmarked using real sample images to measure performance across different scenarios.
+
+### Quick Benchmark Results
+
+| Image Size | Metrics | Processing Time |
+|-----------|---------|-----------------|
+| Small (< 50KB) | Brightness only | ~8ms |
+| Small (< 50KB) | All metrics + Edge | ~12ms |
+| Large (3.2MB) | Brightness only | ~320ms |
+| Large (3.2MB) | All metrics + Edge | ~322ms |
+
+See [detailed benchmark results](docs/BENCHMARK.md) for complete analysis.
+
+### Running Benchmarks
+
+```bash
+# Start the API server
+uvicorn app.main:app --host 0.0.0.0 --port 8080
+
+# Run benchmark (in another terminal)
+python scripts/benchmark.py --iterations 10
+
+# Save results to file
+python scripts/benchmark.py --output results.md
+```
+
+#### Docker Benchmarks
+
+```bash
+# Build and run API in Docker
+docker build -t image-insights-api .
+docker run -d -p 8080:8080 --name api-server image-insights-api
+
+# Run benchmark against Docker container
+python scripts/benchmark.py --host http://localhost:8080
+
+# Or run benchmark inside Docker
+./scripts/benchmark_docker.sh --inside-container
+
+# Full cycle: build, run, benchmark, cleanup
+./scripts/benchmark_docker.sh --build-and-run
+```
+
+**Key Performance Characteristics:**
+- ✅ Consistent performance (low standard deviation)
+- ✅ Fast processing for small images (< 100ms)
+- ✅ Efficient large image handling through automatic resizing
+- ✅ Minimal overhead for additional metrics (~2-3ms per metric)
+- ✅ Edge analysis adds only ~10-20% processing time
+
+
 ## 📁 Project Structure
 
 ```
@@ -364,8 +417,13 @@ image-insights-api/
 │   ├── conftest.py          # Test fixtures
 │   ├── test_api.py          # API tests
 │   └── test_core.py         # Core module tests
+├── scripts/
+│   ├── benchmark.py         # Performance benchmark script
+│   ├── benchmark_docker.sh  # Docker benchmark helper
+│   └── export_openapi.py    # OpenAPI spec export
 ├── docs/
 │   ├── API_DOC.md
+│   ├── BENCHMARK.md         # Benchmark results
 │   ├── PRD.md
 │   ├── TECHNICALS.md
 │   └── swagger.json
