@@ -5,6 +5,8 @@ Privacy-First Design:
 - Image data is immediately discarded after analysis completes
 - No user tracking, sessions, or request history
 - All processing is stateless and isolated per request
+- Cache keys are SHA-256 hashes of image content; URLs and filenames are
+  never stored in the cache
 """
 
 import io
@@ -20,12 +22,14 @@ from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.core import (
+    ImageAnalysisCache,
     calculate_average_luminance,
     calculate_brightness_score,
     calculate_edge_luminance,
     calculate_histogram,
     calculate_luminance,
     calculate_median_luminance,
+    compute_cache_key,
     resize_image_if_needed,
     validate_and_download_from_url,
     validate_edge_mode,
@@ -36,6 +40,12 @@ from app.core import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/v1/image", tags=["image-analysis"])
+
+# Module-level cache instance (shared across all requests)
+_cache = ImageAnalysisCache(
+    max_size=settings.CACHE_MAX_SIZE,
+    ttl_seconds=settings.CACHE_TTL_SECONDS,
+)
 
 
 def _redact_url_for_logging(url: str) -> str:
@@ -301,8 +311,28 @@ async def analyze_image(
             f"File validated - Size: {file_size_mb:.2f}MB, Content-Type: {image.content_type}"
         )
 
+    # Check cache before processing (key is based on content hash, not filename/URL)
+    if settings.CACHE_ENABLED:
+        cache_key = compute_cache_key(contents, requested_metrics, validated_edge_mode)
+        cached = _cache.get(cache_key)
+        if cached is not None:
+            elapsed_time = time.time() - start_time
+            cached["processing_time_ms"] = round(elapsed_time * 1000, 2)
+            cached["cached"] = True
+            if settings.ENABLE_DETAILED_LOGGING:
+                logger.info(
+                    f"Cache hit - Key: {cache_key[:16]}…, Duration: {cached['processing_time_ms']}ms"
+                )
+            return cached
+
     # Process image and get results
     response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)
+
+    # Store in cache (only aggregate metrics, no image data)
+    if settings.CACHE_ENABLED:
+        _cache.set(cache_key, response)
+
+    response["cached"] = False
 
     # Calculate and add processing time
     elapsed_time = time.time() - start_time
@@ -419,8 +449,28 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     if settings.ENABLE_DETAILED_LOGGING:
         logger.info(f"Image downloaded - Size: {file_size_mb:.2f}MB, URL: {redacted_url}")
 
+    # Check cache before processing (key is based on content hash, not the URL)
+    if settings.CACHE_ENABLED:
+        cache_key = compute_cache_key(contents, requested_metrics, validated_edge_mode)
+        cached = _cache.get(cache_key)
+        if cached is not None:
+            elapsed_time = time.time() - start_time
+            cached["processing_time_ms"] = round(elapsed_time * 1000, 2)
+            cached["cached"] = True
+            if settings.ENABLE_DETAILED_LOGGING:
+                logger.info(
+                    f"Cache hit - Key: {cache_key[:16]}…, Duration: {cached['processing_time_ms']}ms"
+                )
+            return cached
+
     # Process image and get results
     response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)
+
+    # Store in cache (only aggregate metrics, no image data or URL)
+    if settings.CACHE_ENABLED:
+        _cache.set(cache_key, response)
+
+    response["cached"] = False
 
     # Calculate and add processing time
     elapsed_time = time.time() - start_time

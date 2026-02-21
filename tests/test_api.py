@@ -2,6 +2,9 @@
 
 import io
 
+from app.api.image_analysis import _cache
+from app.core.cache import ImageAnalysisCache, compute_cache_key
+
 
 class TestHealthEndpoints:
     """Test health check endpoints."""
@@ -226,10 +229,13 @@ class TestDeterminism:
         assert response2.status_code == 200
 
         # Compare responses excluding processing_time_ms which varies per request
+        # and cached which differs between first and second call
         data1 = response1.json()
         data2 = response2.json()
         data1.pop("processing_time_ms", None)
         data2.pop("processing_time_ms", None)
+        data1.pop("cached", None)
+        data2.pop("cached", None)
         assert data1 == data2
 
     def test_response_includes_processing_time(self, client, white_image):
@@ -783,3 +789,231 @@ class TestRealSampleImages:
             assert "percent" in bucket
             assert isinstance(bucket["percent"], (int, float))
             assert 0 <= bucket["percent"] <= 100
+
+
+class TestCachingBehavior:
+    """Test in-memory LRU cache for image analysis endpoints."""
+
+    def test_first_request_not_cached(self, client, gray_image):
+        """First request for an image should have cached=False."""
+        response = client.post(
+            "/v1/image/analysis", files={"image": ("test.png", gray_image, "image/png")}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["cached"] is False
+
+    def test_second_request_is_cached(self, client, gray_image):
+        """Second request with the same image and parameters should be a cache hit."""
+        image_bytes = gray_image.getvalue()
+
+        # First request – cache miss
+        client.post(
+            "/v1/image/analysis",
+            files={"image": ("test.png", io.BytesIO(image_bytes), "image/png")},
+        )
+
+        # Second request with identical content – cache hit
+        response = client.post(
+            "/v1/image/analysis",
+            files={"image": ("other_name.png", io.BytesIO(image_bytes), "image/png")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["cached"] is True
+
+    def test_cached_result_contains_all_metrics(self, client, gray_image):
+        """Cached response should contain all the same metric fields."""
+        image_bytes = gray_image.getvalue()
+
+        # Warm cache
+        first = client.post(
+            "/v1/image/analysis",
+            files={"image": ("test.png", io.BytesIO(image_bytes), "image/png")},
+        ).json()
+
+        # Cache hit
+        second = client.post(
+            "/v1/image/analysis",
+            files={"image": ("test.png", io.BytesIO(image_bytes), "image/png")},
+        ).json()
+
+        assert second["cached"] is True
+        for key in ("brightness_score", "average_luminance", "width", "height", "algorithm"):
+            assert second[key] == first[key]
+
+    def test_different_metrics_produce_separate_cache_entries(self, client, gray_image):
+        """Different metrics parameters should not share cache entries."""
+        image_bytes = gray_image.getvalue()
+
+        r1 = client.post(
+            "/v1/image/analysis?metrics=brightness",
+            files={"image": ("test.png", io.BytesIO(image_bytes), "image/png")},
+        ).json()
+        assert r1["cached"] is False
+
+        r2 = client.post(
+            "/v1/image/analysis?metrics=brightness,median",
+            files={"image": ("test.png", io.BytesIO(image_bytes), "image/png")},
+        ).json()
+        # Different metrics → different cache key → cache miss
+        assert r2["cached"] is False
+
+    def test_different_images_produce_separate_cache_entries(
+        self, client, black_image, white_image
+    ):
+        """Different image content should produce separate cache entries."""
+        r1 = client.post(
+            "/v1/image/analysis",
+            files={"image": ("black.png", black_image, "image/png")},
+        ).json()
+        assert r1["cached"] is False
+
+        r2 = client.post(
+            "/v1/image/analysis",
+            files={"image": ("white.png", white_image, "image/png")},
+        ).json()
+        # Different image content → different hash → cache miss
+        assert r2["cached"] is False
+
+    def test_cache_is_populated_after_first_request(self, client, gray_image):
+        """The module-level cache should contain one entry after the first request."""
+        assert _cache.size == 0
+
+        client.post(
+            "/v1/image/analysis",
+            files={"image": ("test.png", gray_image, "image/png")},
+        )
+
+        assert _cache.size == 1
+
+    def test_url_endpoint_first_request_not_cached(self, client, httpx_mock, create_test_image):
+        """First URL request should have cached=False."""
+        image_bytes = create_test_image((128, 128, 128)).getvalue()
+        httpx_mock.add_response(
+            url="https://example.com/test.png",
+            content=image_bytes,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/test.png"}
+        )
+        assert response.status_code == 200
+        assert response.json()["cached"] is False
+
+    def test_url_endpoint_second_request_is_cached(self, client, httpx_mock, create_test_image):
+        """Second URL request with the same image content should be a cache hit."""
+        image_bytes = create_test_image((128, 128, 128)).getvalue()
+        # Allow two HTTP downloads of the same URL
+        httpx_mock.add_response(
+            url="https://example.com/test.png",
+            content=image_bytes,
+            headers={"content-type": "image/png"},
+        )
+        httpx_mock.add_response(
+            url="https://example.com/test.png",
+            content=image_bytes,
+            headers={"content-type": "image/png"},
+        )
+
+        client.post("/v1/image/analysis/url", json={"url": "https://example.com/test.png"})
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/test.png"}
+        )
+        assert response.status_code == 200
+        assert response.json()["cached"] is True
+
+
+class TestImageAnalysisCacheUnit:
+    """Unit tests for the ImageAnalysisCache class."""
+
+    def test_cache_miss_returns_none(self):
+        """Cache returns None for unknown keys."""
+        cache = ImageAnalysisCache()
+        assert cache.get("nonexistent") is None
+
+    def test_cache_set_and_get(self):
+        """Values stored with set() should be retrievable with get()."""
+        cache = ImageAnalysisCache()
+        cache.set("key1", {"brightness_score": 50})
+        result = cache.get("key1")
+        assert result is not None
+        assert result["brightness_score"] == 50
+
+    def test_cache_returns_copy(self):
+        """get() returns a copy so mutating the result doesn't affect the cache."""
+        cache = ImageAnalysisCache()
+        original = {"brightness_score": 42}
+        cache.set("key1", original)
+
+        copy = cache.get("key1")
+        copy["brightness_score"] = 99
+
+        # Original in cache should be unchanged
+        assert cache.get("key1")["brightness_score"] == 42
+
+    def test_cache_lru_eviction(self):
+        """Cache should evict the least-recently-used entry when max_size is exceeded."""
+        cache = ImageAnalysisCache(max_size=2)
+        cache.set("a", {"v": 1})
+        cache.set("b", {"v": 2})
+        cache.set("c", {"v": 3})  # Should evict "a"
+
+        assert cache.get("a") is None
+        assert cache.get("b") is not None
+        assert cache.get("c") is not None
+
+    def test_cache_ttl_expiry(self):
+        """Entries older than ttl_seconds should be treated as misses."""
+        import time
+
+        cache = ImageAnalysisCache(ttl_seconds=0)
+        cache.set("key1", {"brightness_score": 77})
+
+        # Sleep just long enough for monotonic clock to advance
+        time.sleep(0.01)
+        assert cache.get("key1") is None
+
+    def test_cache_clear(self):
+        """clear() should remove all entries."""
+        cache = ImageAnalysisCache()
+        cache.set("key1", {"v": 1})
+        cache.set("key2", {"v": 2})
+        cache.clear()
+        assert cache.size == 0
+
+    def test_compute_cache_key_deterministic(self):
+        """Same inputs should always produce the same key."""
+        data = b"image data"
+        k1 = compute_cache_key(data, {"brightness", "median"}, "all")
+        k2 = compute_cache_key(data, {"median", "brightness"}, "all")
+        assert k1 == k2
+
+    def test_compute_cache_key_differs_on_content(self):
+        """Different image bytes should produce different keys."""
+        k1 = compute_cache_key(b"image_a", {"brightness"}, None)
+        k2 = compute_cache_key(b"image_b", {"brightness"}, None)
+        assert k1 != k2
+
+    def test_compute_cache_key_differs_on_metrics(self):
+        """Different metrics should produce different keys."""
+        data = b"same image"
+        k1 = compute_cache_key(data, {"brightness"}, None)
+        k2 = compute_cache_key(data, {"brightness", "median"}, None)
+        assert k1 != k2
+
+    def test_compute_cache_key_differs_on_edge_mode(self):
+        """Different edge modes should produce different keys."""
+        data = b"same image"
+        k1 = compute_cache_key(data, {"brightness"}, None)
+        k2 = compute_cache_key(data, {"brightness"}, "all")
+        assert k1 != k2
+
+    def test_compute_cache_key_no_url_in_key(self):
+        """Cache key must not contain the raw URL (privacy requirement)."""
+        url = "https://secret.example.com/private/image.png?token=supersecret"
+        key = compute_cache_key(b"img", {"brightness"}, None)
+        assert url not in key
+        assert "secret" not in key
+        assert "supersecret" not in key
