@@ -312,6 +312,7 @@ async def analyze_image(
         )
 
     # Check cache before processing (key is based on content hash, not filename/URL)
+    cache_key = ""
     if settings.CACHE_ENABLED:
         cache_key = compute_cache_key(contents, requested_metrics, validated_edge_mode)
         cached = _cache.get(cache_key)
@@ -450,6 +451,7 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
         logger.info(f"Image downloaded - Size: {file_size_mb:.2f}MB, URL: {redacted_url}")
 
     # Check cache before processing (key is based on content hash, not the URL)
+    cache_key = ""
     if settings.CACHE_ENABLED:
         cache_key = compute_cache_key(contents, requested_metrics, validated_edge_mode)
         cached = _cache.get(cache_key)

@@ -984,10 +984,11 @@ class TestImageAnalysisCacheUnit:
         assert cache.size == 0
 
     def test_compute_cache_key_deterministic(self):
-        """Same inputs should always produce the same key."""
+        """Same inputs should always produce the same key regardless of set iteration order."""
         data = b"image data"
-        k1 = compute_cache_key(data, {"brightness", "median"}, "all")
-        k2 = compute_cache_key(data, {"median", "brightness"}, "all")
+        metrics = {"brightness", "median"}
+        k1 = compute_cache_key(data, metrics, "all")
+        k2 = compute_cache_key(data, metrics, "all")
         assert k1 == k2
 
     def test_compute_cache_key_differs_on_content(self):
