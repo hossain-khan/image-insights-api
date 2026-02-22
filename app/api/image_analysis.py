@@ -13,7 +13,6 @@ import io
 import logging
 import time
 from typing import Annotated, Any
-from urllib.parse import urlparse
 
 import numpy as np
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
@@ -30,6 +29,7 @@ from app.core import (
     calculate_luminance,
     calculate_median_luminance,
     compute_cache_key,
+    redact_url_for_logging,
     resize_image_if_needed,
     validate_and_download_from_url,
     validate_edge_mode,
@@ -46,27 +46,6 @@ _cache = ImageAnalysisCache(
     max_size=settings.CACHE_MAX_SIZE,
     ttl_seconds=settings.CACHE_TTL_SECONDS,
 )
-
-
-def _redact_url_for_logging(url: str) -> str:
-    """
-    Redact sensitive information from URL for safe logging.
-
-    Removes query parameters and userinfo to prevent leaking credentials or tokens.
-
-    Args:
-        url: The URL to redact
-
-    Returns:
-        Redacted URL with only scheme, hostname, and path
-    """
-    try:
-        parsed = urlparse(url)
-        # Keep only scheme, hostname, and path
-        redacted = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-        return redacted
-    except Exception:
-        return "[invalid-url]"
 
 
 class ImageUrlRequest(BaseModel):
@@ -431,7 +410,7 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     start_time = time.time()
 
     # Redact URL for safe logging
-    redacted_url = _redact_url_for_logging(request.url)
+    redacted_url = redact_url_for_logging(request.url)
 
     if settings.ENABLE_DETAILED_LOGGING:
         logger.info(

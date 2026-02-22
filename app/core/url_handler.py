@@ -9,6 +9,30 @@ from fastapi import HTTPException
 from app.config import settings
 
 
+def redact_url_for_logging(url: str) -> str:
+    """
+    Redact sensitive information from URL for safe logging.
+
+    Removes the path, query parameters, and userinfo to prevent leaking
+    credentials, tokens, or user-identifiable resource paths.
+
+    Args:
+        url: The URL to redact
+
+    Returns:
+        Redacted URL with only scheme and hostname (e.g. ``https://example.com``)
+    """
+    try:
+        parsed = urlparse(url)
+        # Use parsed.hostname (strips userinfo) and parsed.port for a clean netloc
+        host = parsed.hostname or ""
+        port = f":{parsed.port}" if parsed.port else ""
+        # Keep only scheme and netloc (hostname[:port]); strip path, query, fragment
+        return f"{parsed.scheme}://{host}{port}"
+    except Exception:
+        return "[invalid-url]"
+
+
 def _is_private_or_local_url(url: str) -> bool:
     """
     Check if URL points to private/local IP address.
@@ -106,7 +130,7 @@ async def validate_and_download_from_url(url: str, timeout: float | None = None)
                     detail={
                         "error": "Failed to download image from URL",
                         "status_code": response.status_code,
-                        "url": url,
+                        "url": redact_url_for_logging(url),
                     },
                 )
 
@@ -175,7 +199,10 @@ async def validate_and_download_from_url(url: str, timeout: float | None = None)
     except httpx.TimeoutException as e:
         raise HTTPException(
             status_code=408,
-            detail={"error": "Request timeout while downloading image", "url": url},
+            detail={
+                "error": "Request timeout while downloading image",
+                "url": redact_url_for_logging(url),
+            },
         ) from e
     except httpx.RequestError as e:
         raise HTTPException(
@@ -183,6 +210,6 @@ async def validate_and_download_from_url(url: str, timeout: float | None = None)
             detail={
                 "error": "Failed to download image from URL",
                 "detail": str(e),
-                "url": url,
+                "url": redact_url_for_logging(url),
             },
         ) from e
