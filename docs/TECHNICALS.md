@@ -412,3 +412,116 @@ app/
 Each metric = isolated function → easy to add/remove.
 
 ---
+
+## 🔄 Caching Strategy
+
+The API implements **LRU (Least Recently Used) + TTL (Time-to-Live) caching** to improve performance for repeated image analysis requests.
+
+### How it works
+
+**Cache Key**
+
+* Generated from image file content (not filename/URL)
+* Hash-based: identical images from different URLs/names return cached result
+* Prevents duplicate analysis work
+
+**Eviction Policy**
+
+* **LRU**: When cache reaches max size, least recently used entries are removed
+* **TTL**: Entries expire after configured time (default: 24 hours)
+* **Hybrid**: Either eviction policy can trigger removal
+
+### Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CACHE_ENABLED` | `true` | Enable/disable caching |
+| `CACHE_MAX_SIZE` | `512` | Maximum cached entries before LRU eviction |
+| `CACHE_TTL_SECONDS` | `86400` | Expiration time in seconds (24 hours) |
+
+### When caching helps
+
+**Best for:**
+* Repeated image analysis (e.g., mobile app re-analyzing same photo)
+* Batch processing of similar images
+* Development/testing with same test images
+* Reduced CPU usage for frequently-analyzed images
+
+**Not helpful for:**
+* Continuous stream of unique images
+* Real-time image analysis where cache invalidation is critical
+* Memory-constrained environments
+
+### When to disable caching
+
+```bash
+docker run -e CACHE_ENABLED=false image-insights-api
+```
+
+**Use cases:**
+* Testing (want fresh analysis every time)
+* Memory constraints (reduce RAM usage)
+* Images that change frequently
+* Stateless ephemeral deployments
+
+### Performance impact
+
+**With caching enabled:**
+* Cache hit: ~1-2ms (return stored result)
+* Cache miss: Normal analysis time (~20-100ms depending on image size)
+* Memory: ~10-50MB for 512 entries (varies by image size)
+
+**Example:** 100 requests, 80% cache hit rate
+* Without cache: 100 × 50ms = **5000ms**
+* With cache: (100 × 0.2 × 50ms) + (100 × 0.8 × 1ms) = **1080ms** ✅ **5x faster**
+
+### Sizing the cache
+
+**For high-traffic production:**
+
+```bash
+# Increase cache size for more hits
+docker run -e CACHE_MAX_SIZE=2048 image-insights-api
+```
+
+**Memory estimation:**
+* Per entry: ~100-500 bytes overhead + image processing data
+* 512 entries: ~50-250MB RAM
+* 2048 entries: ~200-1000MB RAM
+
+**Recommended settings:**
+
+| Scenario | MAX_SIZE | TTL | Reasoning |
+|----------|----------|-----|-----------|
+| Development | 128 | 3600 (1h) | Quick testing, minimal memory |
+| Small API | 512 | 86400 (24h) | Default; good for 100-1000 req/day |
+| Medium API | 1024-2048 | 86400 (24h) | 1000-10,000 req/day |
+| Large API | 4096+ | 14400 (4h) | 10,000+ req/day; aggressive expiry |
+| Batch processing | 256 | 1800 (30m) | Short window; clear old results |
+
+### Docker Compose example
+
+```yaml
+services:
+  image-insights-api:
+    image: ghcr.io/hossain-khan/image-insights-api:latest
+    ports:
+      - "8080:8080"
+    environment:
+      CACHE_ENABLED: "true"
+      CACHE_MAX_SIZE: "1024"
+      CACHE_TTL_SECONDS: "86400"
+```
+
+### Implementation details
+
+**Cache storage:** In-memory Python dictionary with LRU eviction
+
+**Thread safety:** Cache is thread-safe (Uvicorn uses multiple workers)
+
+**Persistence:** Cache is **not persistent** across container restarts (in-memory only)
+* This is intentional for stateless deployments
+* Enables easy horizontal scaling
+* Aligns with privacy-first design (no disk storage)
+
+---
