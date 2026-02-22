@@ -469,7 +469,7 @@ docker run -e CACHE_ENABLED=false image-insights-api
 **With caching enabled:**
 * Cache hit: ~1-2ms (return stored result)
 * Cache miss: Normal analysis time (~20-100ms depending on image size)
-* Memory: ~10-50MB for 512 entries (varies by image size)
+* Memory: ~5-30MB for 512 entries (mostly URL cache for repeated downloads)
 
 **Example:** 100 requests, 80% cache hit rate
 * Without cache: 100 × 50ms = **5000ms**
@@ -485,9 +485,22 @@ docker run -e CACHE_MAX_SIZE=2048 image-insights-api
 ```
 
 **Memory estimation:**
-* Per entry: ~100-500 bytes overhead + image processing data
-* 512 entries: ~50-250MB RAM
-* 2048 entries: ~200-1000MB RAM
+
+*Analysis cache (stores only computed metrics):*
+* Per entry: ~500-1000 bytes (brightness, histogram, metadata)
+* 512 entries: ~0.5-1 MB
+* 2048 entries: ~1-2 MB
+
+*URL cache (stores downloaded image bytes, 1/8 of analysis cache size):*
+* Per entry: ~100-500 KB (actual image data)
+* 64 entries (for 512 analysis): ~6-30 MB
+* 256 entries (for 2048 analysis): ~25-120 MB
+
+*Combined total:*
+* 512 analysis entries: **~5-30 MB**
+* 2048 analysis entries: **~20-130 MB**
+
+Note: Most memory is consumed by the URL cache. File upload requests create no persistent image data.
 
 **Recommended settings:**
 
@@ -515,9 +528,19 @@ services:
 
 ### Implementation details
 
-**Cache storage:** In-memory Python dictionary with LRU eviction
+**Cache architecture:** Dual LRU cache system
 
-**Thread safety:** Cache is thread-safe (Uvicorn uses multiple workers)
+1. **Analysis cache (`_store`)**: Stores only computed metrics (brightness scores, histograms, metadata)
+   - Hash key computed from image content + requested metrics
+   - Values: JSON-like dictionaries (~500-1000 bytes each)
+   - No image data stored
+
+2. **URL cache (`_url_cache`)**: Stores downloaded image bytes (URL requests only)
+   - Avoids re-downloading the same URL repeatedly
+   - Size: 1/8 of analysis cache (64 entries for 512 analysis cache)
+   - Only location where image bytes are kept in memory
+
+**Thread safety:** Both caches are thread-safe (Uvicorn uses multiple workers)
 
 **Persistence:** Cache is **not persistent** across container restarts (in-memory only)
 * This is intentional for stateless deployments
