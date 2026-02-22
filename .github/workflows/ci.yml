@@ -69,13 +69,14 @@ jobs:
 
       - name: Run tests with coverage
         run: |
-          pytest tests/ -v --cov=app --cov-report=xml --cov-report=term-missing
+          pytest tests/ -v --cov=app --cov-branch --cov-report=xml --cov-report=term-missing
 
-      - name: Upload coverage to Codecov
+      - name: Upload coverage reports to Codecov
         if: matrix.python-version == '3.11'
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
-          files: ./coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: hossain-khan/image-insights-api
           fail_ci_if_error: false
         continue-on-error: true
 
