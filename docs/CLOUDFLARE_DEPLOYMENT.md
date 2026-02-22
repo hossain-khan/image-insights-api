@@ -465,7 +465,6 @@ For moderate traffic (around 100 requests/day):
 - **API Reference**: [REST API Documentation](https://developers.cloudflare.com/api/resources/)
 - **Community**: [Cloudflare Community Forums](https://community.cloudflare.com/)
 - **Support**: [Cloudflare Support](https://support.cloudflare.com/)
-5. ✅ Optimize based on metrics and usage
 
 ## Useful Resources
 
