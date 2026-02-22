@@ -3,6 +3,8 @@
 import logging
 import time
 
+from app.core.url_handler import redact_url_for_logging
+
 
 class TestLoggingWhenEnabled:
     """Test logging behavior when ENABLE_DETAILED_LOGGING is True."""
@@ -281,3 +283,96 @@ class TestLoggingPerformance:
         assert "brightness" in log_msg
         assert "median" in log_msg
         assert "histogram" in log_msg
+
+
+class TestUrlRedactionFunction:
+    """Unit tests for the redact_url_for_logging utility."""
+
+    def test_strips_path(self):
+        """Test that the URL path is removed."""
+        result = redact_url_for_logging("https://cdn.example.com/users/12345/profile.jpg")
+        assert result == "https://cdn.example.com"
+        assert "/users/12345" not in result
+        assert "profile.jpg" not in result
+
+    def test_strips_query_params(self):
+        """Test that query parameters (e.g., tokens) are removed."""
+        result = redact_url_for_logging("https://cdn.example.com/img.jpg?token=secret&user=alice")
+        assert result == "https://cdn.example.com"
+        assert "token" not in result
+        assert "secret" not in result
+        assert "user=alice" not in result
+
+    def test_strips_userinfo(self):
+        """Test that embedded userinfo credentials are removed."""
+        result = redact_url_for_logging("https://user:password@cdn.example.com/img.jpg")
+        assert "password" not in result
+
+    def test_preserves_scheme_and_host(self):
+        """Test that scheme and hostname are kept."""
+        result = redact_url_for_logging("https://images.example.com/photo.jpg")
+        assert result == "https://images.example.com"
+
+    def test_preserves_port(self):
+        """Test that a non-standard port is preserved with the hostname."""
+        result = redact_url_for_logging("https://cdn.example.com:8443/private/img.jpg")
+        assert result == "https://cdn.example.com:8443"
+
+    def test_http_scheme(self):
+        """Test that http:// scheme is handled."""
+        result = redact_url_for_logging("http://example.com/path/to/image.png")
+        assert result == "http://example.com"
+
+    def test_empty_url_returns_string(self):
+        """Test that an empty string yields a safe string value."""
+        result = redact_url_for_logging("")
+        assert isinstance(result, str)
+
+
+class TestPiiNotInLogs:
+    """Verify that PII / image URLs are not present in console log output."""
+
+    def test_upload_endpoint_logs_no_url(self, client, white_image, caplog):
+        """Test that the file-upload endpoint logs no URL at all."""
+        with caplog.at_level(logging.INFO):
+            client.post(
+                "/v1/image/analysis?metrics=brightness",
+                files={"image": ("test.png", white_image, "image/png")},
+            )
+
+        # Filter to only our application logs (exclude httpx transport logs)
+        app_logs = " ".join(
+            record.message for record in caplog.records if record.name.startswith("app.")
+        )
+        # No URL-like patterns should appear in upload endpoint logs
+        assert "http://" not in app_logs
+        assert "https://" not in app_logs
+
+    def test_upload_endpoint_logs_no_query_params(self, client, white_image, caplog):
+        """Test that URL query parameters are not present in any log message."""
+        with caplog.at_level(logging.INFO):
+            client.post(
+                "/v1/image/analysis?metrics=brightness",
+                files={"image": ("test.png", white_image, "image/png")},
+            )
+
+        # Filter to only our application logs (exclude httpx transport logs)
+        app_logs = " ".join(
+            record.message for record in caplog.records if record.name.startswith("app.")
+        )
+        assert "token=" not in app_logs
+        assert "api_key=" not in app_logs
+
+    def test_redacted_url_contains_only_host(self):
+        """Test that redacted URL contains only scheme and host, nothing more."""
+        url_with_pii = "https://storage.example.com/tenants/acme/users/42/avatar.jpg?sig=abc123"
+        redacted = redact_url_for_logging(url_with_pii)
+        assert redacted == "https://storage.example.com"
+        # Path segments that could be PII must be absent
+        assert "tenants" not in redacted
+        assert "acme" not in redacted
+        assert "users" not in redacted
+        assert "42" not in redacted
+        assert "avatar.jpg" not in redacted
+        assert "sig=" not in redacted
+        assert "abc123" not in redacted
