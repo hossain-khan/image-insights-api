@@ -33,6 +33,11 @@ class Settings:
     HISTOGRAM_BUCKETS: int = 10
     LUMINANCE_MAX: int = 255
 
+    # Cache settings
+    CACHE_ENABLED: bool = True
+    CACHE_MAX_SIZE: int = 512  # Maximum number of cached results (LRU eviction)
+    CACHE_TTL_SECONDS: int = 86400  # Time-to-live for cache entries (24 hours)
+
     # Logging
     ENABLE_DETAILED_LOGGING: bool = _get_logging_config()
 

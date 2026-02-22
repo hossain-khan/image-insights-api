@@ -316,6 +316,9 @@ brightness_score = round((average_luminance / 255) * 100)
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `ENABLE_DETAILED_LOGGING` | `true` | Enable detailed application logging (request info, processing time, dimensions) |
+| `CACHE_ENABLED` | `true` | Enable in-memory LRU+TTL cache for image analysis results |
+| `CACHE_MAX_SIZE` | `512` | Maximum number of cached results before LRU eviction |
+| `CACHE_TTL_SECONDS` | `86400` | Time-to-live for cache entries in seconds (default: 24 hours) |
 
 **Example:**
 

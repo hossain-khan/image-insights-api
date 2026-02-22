@@ -1,5 +1,6 @@
 """Core module exports."""
 
+from app.core.cache import ImageAnalysisCache, compute_cache_key
 from app.core.histogram import calculate_histogram
 from app.core.luminance import (
     calculate_average_luminance,
@@ -13,6 +14,8 @@ from app.core.url_handler import validate_and_download_from_url
 from app.core.validators import validate_edge_mode, validate_image_upload, validate_metrics
 
 __all__ = [
+    "ImageAnalysisCache",
+    "compute_cache_key",
     "calculate_histogram",
     "calculate_luminance",
     "calculate_average_luminance",

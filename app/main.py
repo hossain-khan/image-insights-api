@@ -137,7 +137,7 @@ app.include_router(image_analysis_router)
                             "summary": "Healthy API",
                             "value": {
                                 "service": "image-insights-api",
-                                "version": "1.6.0",
+                                "version": "1.7.0",
                                 "status": "healthy",
                             },
                         }
@@ -167,7 +167,7 @@ async def root():
                             "value": {
                                 "status": "healthy",
                                 "service": "image-insights-api",
-                                "version": "1.6.0",
+                                "version": "1.7.0",
                             },
                         }
                     }

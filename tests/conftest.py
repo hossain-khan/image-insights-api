@@ -14,6 +14,16 @@ TEST_FIXTURES_DIR = Path(__file__).parent / "fixtures"
 SAMPLE_IMAGES_DIR = Path(__file__).parent
 
 
+@pytest.fixture(autouse=True)
+def clear_analysis_cache():
+    """Clear the image analysis cache before every test for isolation."""
+    from app.api.image_analysis import _cache
+
+    _cache.clear()
+    yield
+    _cache.clear()
+
+
 @pytest.fixture
 def client():
     """Create a test client."""

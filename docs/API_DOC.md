@@ -55,7 +55,7 @@ Root endpoint for basic health check.
 ```json
 {
   "service": "image-insights-api",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "status": "healthy"
 }
 ```
@@ -69,7 +69,7 @@ Detailed health check endpoint.
 {
   "status": "healthy",
   "service": "image-insights-api",
-  "version": "1.6.0"
+  "version": "1.7.0"
 }
 ```
 
@@ -497,6 +497,12 @@ axios.post('http://localhost:8080/v1/image/analysis/url', {
 | Field | Type | Description |
 |-------|------|-------------|
 | `processing_time_ms` | float | Time taken to process the image in milliseconds |
+
+### Cache Status (Always Included)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `cached` | boolean | `true` if the result was served from the in-memory cache; `false` if freshly computed |
 
 ### Metadata (Always Included)
 
