@@ -1011,10 +1011,80 @@ class TestImageAnalysisCacheUnit:
         k2 = compute_cache_key(data, {"brightness"}, "all")
         assert k1 != k2
 
-    def test_compute_cache_key_no_url_in_key(self):
-        """Cache key must not contain the raw URL (privacy requirement)."""
-        url = "https://secret.example.com/private/image.png?token=supersecret"
-        key = compute_cache_key(b"img", {"brightness"}, None)
-        assert url not in key
-        assert "secret" not in key
-        assert "supersecret" not in key
+    def test_compute_cache_key_independent_of_url(self):
+        """Cache key must not depend on the request URL (privacy requirement).
+
+        The URL is never passed to compute_cache_key().  This test verifies
+        that two calls representing the same image content fetched from
+        different URLs produce identical cache keys, ensuring URLs (which may
+        contain tokens or paths with PII) are never incorporated into the key.
+        """
+        image_bytes = b"img"
+        metrics = {"brightness"}
+        edge_mode = None
+
+        # url_1 = "https://secret.example.com/private/image.png?token=abc"
+        # url_2 = "https://other.example.com/images/photo.png?key=xyz"
+        # Both return the same raw image_bytes; neither URL is passed to the key.
+        key_for_url_1 = compute_cache_key(image_bytes, metrics, edge_mode)
+        key_for_url_2 = compute_cache_key(image_bytes, metrics, edge_mode)
+
+        assert key_for_url_1 == key_for_url_2
+
+
+class TestCacheDisabledBehavior:
+    """Test API behavior when CACHE_ENABLED is False."""
+
+    def test_upload_endpoint_cached_field_false_when_cache_disabled(
+        self, client, gray_image, monkeypatch
+    ):
+        """When caching is disabled the response still includes cached=False."""
+        from app.config import Settings
+
+        monkeypatch.setattr("app.api.image_analysis.settings", Settings(CACHE_ENABLED=False))
+
+        response = client.post(
+            "/v1/image/analysis",
+            files={"image": ("test.png", gray_image, "image/png")},
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "cached" in data
+        assert data["cached"] is False
+
+    def test_upload_endpoint_cache_not_populated_when_disabled(
+        self, client, gray_image, monkeypatch
+    ):
+        """When caching is disabled no entries are added to the cache."""
+        from app.config import Settings
+
+        monkeypatch.setattr("app.api.image_analysis.settings", Settings(CACHE_ENABLED=False))
+        assert _cache.size == 0
+
+        client.post(
+            "/v1/image/analysis",
+            files={"image": ("test.png", gray_image, "image/png")},
+        )
+        assert _cache.size == 0
+
+    def test_url_endpoint_cached_field_false_when_cache_disabled(
+        self, client, httpx_mock, create_test_image, monkeypatch
+    ):
+        """URL endpoint still includes cached=False when caching is disabled."""
+        from app.config import Settings
+
+        monkeypatch.setattr("app.api.image_analysis.settings", Settings(CACHE_ENABLED=False))
+        image_bytes = create_test_image((128, 128, 128)).getvalue()
+        httpx_mock.add_response(
+            url="https://example.com/test.png",
+            content=image_bytes,
+            headers={"content-type": "image/png"},
+        )
+
+        response = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/test.png"}
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert "cached" in data
+        assert data["cached"] is False

@@ -1,13 +1,14 @@
 """In-memory LRU cache for image analysis results.
 
 Privacy-First Design:
-- Cache keys are SHA-256 hashes of image content + request parameters.
+- Cache keys are BLAKE2b hashes of image content + request parameters.
   The original image bytes, URLs, and filenames are NEVER stored.
 - Cache values contain only aggregate metrics (no pixel data or PII).
 - Cache entries expire after a configurable TTL to bound memory usage.
 - LRU eviction ensures the cache never exceeds a configurable maximum size.
 """
 
+import copy
 import hashlib
 import logging
 import threading
@@ -22,9 +23,13 @@ def compute_cache_key(image_bytes: bytes, metrics: set[str], edge_mode: str | No
     """
     Compute a compact, privacy-safe cache key for an image analysis request.
 
-    The key is a SHA-256 digest of the image content combined with the
+    The key is a BLAKE2b digest of the image content combined with the
     requested metrics and edge mode.  The original image bytes and any
     URL or filename are discarded – only the hash is kept.
+
+    BLAKE2b is used instead of SHA-256 because it is significantly faster
+    on modern hardware while still providing strong collision resistance for
+    cache correctness.
 
     Args:
         image_bytes: Raw image content used solely to compute the hash.
@@ -32,12 +37,15 @@ def compute_cache_key(image_bytes: bytes, metrics: set[str], edge_mode: str | No
         edge_mode: Optional edge analysis mode string.
 
     Returns:
-        A hex-encoded SHA-256 digest string (64 characters).
+        A hex-encoded BLAKE2b digest string.
     """
-    hasher = hashlib.sha256()
+    hasher = hashlib.blake2b()
     hasher.update(image_bytes)
-    # Deterministic representation of metrics (sorted) and edge_mode
+    # Use "|" as separator between components to prevent hash collisions
+    # (e.g. metrics="" + edge_mode="all" vs metrics="all" + edge_mode="")
+    hasher.update(b"|")
     hasher.update(",".join(sorted(metrics)).encode())
+    hasher.update(b"|")
     hasher.update((edge_mode or "").encode())
     return hasher.hexdigest()
 
@@ -68,11 +76,15 @@ class ImageAnalysisCache:
         """
         Retrieve a cached result.
 
+        Returns a deep copy so that callers can freely mutate the returned
+        dict (e.g. add ``processing_time_ms``) without affecting the stored
+        entry.
+
         Args:
             key: Cache key produced by :func:`compute_cache_key`.
 
         Returns:
-            A copy of the cached result dict, or ``None`` when not found /
+            A deep copy of the cached result dict, or ``None`` when not found /
             expired.
         """
         with self._lock:
@@ -85,11 +97,19 @@ class ImageAnalysisCache:
                 return None
             # Move to end (most recently used)
             self._store.move_to_end(key)
-            return dict(result)
+            return copy.deepcopy(result)
 
     def set(self, key: str, result: dict[str, Any]) -> None:
         """
         Store a result in the cache.
+
+        A deep copy of ``result`` is stored so that subsequent mutations by
+        the caller do not corrupt the cached value.
+
+        Note: if the key already exists, its TTL is reset to the current
+        time.  This is intentional – analysis results are deterministic, so
+        re-caching the same key is essentially a no-op that refreshes the
+        expiry.
 
         Args:
             key: Cache key produced by :func:`compute_cache_key`.
@@ -98,7 +118,7 @@ class ImageAnalysisCache:
         with self._lock:
             if key in self._store:
                 self._store.move_to_end(key)
-            self._store[key] = (time.monotonic(), dict(result))
+            self._store[key] = (time.monotonic(), copy.deepcopy(result))
             # Evict oldest entry when over capacity
             if len(self._store) > self._max_size:
                 self._store.popitem(last=False)

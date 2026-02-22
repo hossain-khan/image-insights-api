@@ -318,22 +318,24 @@ async def analyze_image(
         cached = _cache.get(cache_key)
         if cached is not None:
             elapsed_time = time.time() - start_time
-            cached["processing_time_ms"] = round(elapsed_time * 1000, 2)
-            cached["cached"] = True
+            response = cached
+            response["processing_time_ms"] = round(elapsed_time * 1000, 2)
+            response["cached"] = True
             if settings.ENABLE_DETAILED_LOGGING:
                 logger.info(
-                    f"Cache hit - Key: {cache_key[:16]}…, Duration: {cached['processing_time_ms']}ms"
+                    f"Cache hit - Key: {cache_key[:16]}…, Duration: {response['processing_time_ms']}ms"
                 )
-            return cached
+            return response
 
     # Process image and get results
     response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)
+    # Mark as a fresh result before caching; also ensures the field is always
+    # present in the response even when CACHE_ENABLED is False.
+    response["cached"] = False
 
     # Store in cache (only aggregate metrics, no image data)
     if settings.CACHE_ENABLED:
         _cache.set(cache_key, response)
-
-    response["cached"] = False
 
     # Calculate and add processing time
     elapsed_time = time.time() - start_time
@@ -457,22 +459,24 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
         cached = _cache.get(cache_key)
         if cached is not None:
             elapsed_time = time.time() - start_time
-            cached["processing_time_ms"] = round(elapsed_time * 1000, 2)
-            cached["cached"] = True
+            response = cached
+            response["processing_time_ms"] = round(elapsed_time * 1000, 2)
+            response["cached"] = True
             if settings.ENABLE_DETAILED_LOGGING:
                 logger.info(
-                    f"Cache hit - Key: {cache_key[:16]}…, Duration: {cached['processing_time_ms']}ms"
+                    f"Cache hit - Key: {cache_key[:16]}…, Duration: {response['processing_time_ms']}ms"
                 )
-            return cached
+            return response
 
     # Process image and get results
     response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)
+    # Mark as a fresh result before caching; also ensures the field is always
+    # present in the response even when CACHE_ENABLED is False.
+    response["cached"] = False
 
     # Store in cache (only aggregate metrics, no image data or URL)
     if settings.CACHE_ENABLED:
         _cache.set(cache_key, response)
-
-    response["cached"] = False
 
     # Calculate and add processing time
     elapsed_time = time.time() - start_time
