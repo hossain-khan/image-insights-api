@@ -55,7 +55,7 @@ Root endpoint for basic health check.
 ```json
 {
   "service": "image-insights-api",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "status": "healthy"
 }
 ```
@@ -69,7 +69,7 @@ Detailed health check endpoint.
 {
   "status": "healthy",
   "service": "image-insights-api",
-  "version": "1.7.0"
+  "version": "1.7.1"
 }
 ```
 

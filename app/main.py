@@ -28,6 +28,9 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
+# Suppress httpx INFO logs to prevent exposing full URLs (PII/privacy concern)
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
 logger = logging.getLogger(__name__)
 
 
@@ -137,7 +140,7 @@ app.include_router(image_analysis_router)
                             "summary": "Healthy API",
                             "value": {
                                 "service": "image-insights-api",
-                                "version": "1.7.0",
+                                "version": "1.7.1",
                                 "status": "healthy",
                             },
                         }
@@ -167,7 +170,7 @@ async def root():
                             "value": {
                                 "status": "healthy",
                                 "service": "image-insights-api",
-                                "version": "1.7.0",
+                                "version": "1.7.1",
                             },
                         }
                     }
