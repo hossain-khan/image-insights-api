@@ -62,7 +62,7 @@ def export_openapi_spec(server_url: str, output_path: Path) -> bool:
             json.dump(spec, f, indent=2)
         print(f"✅ OpenAPI spec exported to {output_path}")
         return True
-    except IOError as e:
+    except OSError as e:
         print(f"❌ Error writing to {output_path}: {e}")
         return False
 

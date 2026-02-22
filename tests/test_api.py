@@ -903,26 +903,30 @@ class TestCachingBehavior:
         assert response.json()["cached"] is False
 
     def test_url_endpoint_second_request_is_cached(self, client, httpx_mock, create_test_image):
-        """Second URL request with the same image content should be a cache hit."""
+        """Second URL request with same URL should be a cache hit (no re-download)."""
         image_bytes = create_test_image((128, 128, 128)).getvalue()
-        # Allow two HTTP downloads of the same URL
-        httpx_mock.add_response(
-            url="https://example.com/test.png",
-            content=image_bytes,
-            headers={"content-type": "image/png"},
-        )
+        # Mock only ONE HTTP request - the second request will hit cache
         httpx_mock.add_response(
             url="https://example.com/test.png",
             content=image_bytes,
             headers={"content-type": "image/png"},
         )
 
-        client.post("/v1/image/analysis/url", json={"url": "https://example.com/test.png"})
-        response = client.post(
+        # First request - cache miss, downloads image
+        response1 = client.post(
             "/v1/image/analysis/url", json={"url": "https://example.com/test.png"}
         )
-        assert response.status_code == 200
-        assert response.json()["cached"] is True
+        assert response1.status_code == 200
+        assert response1.json()["cached"] is False
+
+        # Second request - cache hit, no download (URL-based cache key)
+        response2 = client.post(
+            "/v1/image/analysis/url", json={"url": "https://example.com/test.png"}
+        )
+        assert response2.status_code == 200
+        assert response2.json()["cached"] is True
+        # Verify results match
+        assert response2.json()["brightness_score"] == response1.json()["brightness_score"]
 
 
 class TestImageAnalysisCacheUnit:
@@ -987,49 +991,76 @@ class TestImageAnalysisCacheUnit:
         """Same inputs should always produce the same key regardless of set iteration order."""
         data = b"image data"
         metrics = {"brightness", "median"}
-        k1 = compute_cache_key(data, metrics, "all")
-        k2 = compute_cache_key(data, metrics, "all")
+        k1 = compute_cache_key(metrics=metrics, edge_mode="all", image_bytes=data)
+        k2 = compute_cache_key(metrics=metrics, edge_mode="all", image_bytes=data)
         assert k1 == k2
 
     def test_compute_cache_key_differs_on_content(self):
         """Different image bytes should produce different keys."""
-        k1 = compute_cache_key(b"image_a", {"brightness"}, None)
-        k2 = compute_cache_key(b"image_b", {"brightness"}, None)
+        k1 = compute_cache_key(metrics={"brightness"}, edge_mode=None, image_bytes=b"image_a")
+        k2 = compute_cache_key(metrics={"brightness"}, edge_mode=None, image_bytes=b"image_b")
         assert k1 != k2
 
     def test_compute_cache_key_differs_on_metrics(self):
         """Different metrics should produce different keys."""
         data = b"same image"
-        k1 = compute_cache_key(data, {"brightness"}, None)
-        k2 = compute_cache_key(data, {"brightness", "median"}, None)
+        k1 = compute_cache_key(metrics={"brightness"}, edge_mode=None, image_bytes=data)
+        k2 = compute_cache_key(metrics={"brightness", "median"}, edge_mode=None, image_bytes=data)
         assert k1 != k2
 
     def test_compute_cache_key_differs_on_edge_mode(self):
         """Different edge modes should produce different keys."""
         data = b"same image"
-        k1 = compute_cache_key(data, {"brightness"}, None)
-        k2 = compute_cache_key(data, {"brightness"}, "all")
+        k1 = compute_cache_key(metrics={"brightness"}, edge_mode=None, image_bytes=data)
+        k2 = compute_cache_key(metrics={"brightness"}, edge_mode="all", image_bytes=data)
         assert k1 != k2
 
-    def test_compute_cache_key_independent_of_url(self):
-        """Cache key must not depend on the request URL (privacy requirement).
+    def test_compute_cache_key_url_based_for_url_requests(self):
+        """URL-based requests use URL in cache key, not image content.
 
-        The URL is never passed to compute_cache_key().  This test verifies
-        that two calls representing the same image content fetched from
-        different URLs produce identical cache keys, ensuring URLs (which may
-        contain tokens or paths with PII) are never incorporated into the key.
+        This allows cache hits without downloading the image. Different URLs
+        with potentially identical content will have different cache keys.
         """
-        image_bytes = b"img"
+        url_1 = "https://example.com/image1.jpg"
+        url_2 = "https://example.com/image2.jpg"
         metrics = {"brightness"}
         edge_mode = None
 
-        # url_1 = "https://secret.example.com/private/image.png?token=abc"
-        # url_2 = "https://other.example.com/images/photo.png?key=xyz"
-        # Both return the same raw image_bytes; neither URL is passed to the key.
-        key_for_url_1 = compute_cache_key(image_bytes, metrics, edge_mode)
-        key_for_url_2 = compute_cache_key(image_bytes, metrics, edge_mode)
+        key_for_url_1 = compute_cache_key(metrics=metrics, edge_mode=edge_mode, url=url_1)
+        key_for_url_2 = compute_cache_key(metrics=metrics, edge_mode=edge_mode, url=url_2)
 
-        assert key_for_url_1 == key_for_url_2
+        # Different URLs produce different keys (even if content might be identical)
+        assert key_for_url_1 != key_for_url_2
+
+        # Same URL produces same key
+        key_repeat = compute_cache_key(metrics=metrics, edge_mode=edge_mode, url=url_1)
+        assert key_for_url_1 == key_repeat
+
+    def test_compute_cache_key_content_based_for_uploads(self):
+        """Upload requests use content hash in cache key.
+
+        Identical images uploaded multiple times share the same cache entry.
+        """
+        image_bytes = b"same image content"
+        metrics = {"brightness"}
+        edge_mode = None
+
+        key_1 = compute_cache_key(metrics=metrics, edge_mode=edge_mode, image_bytes=image_bytes)
+        key_2 = compute_cache_key(metrics=metrics, edge_mode=edge_mode, image_bytes=image_bytes)
+
+        assert key_1 == key_2
+
+    def test_compute_cache_key_url_vs_upload_different(self):
+        """URL and upload requests with same content have different cache keys."""
+        content = b"img"
+        url = "https://example.com/img.jpg"
+        metrics = {"brightness"}
+
+        key_upload = compute_cache_key(metrics=metrics, edge_mode=None, image_bytes=content)
+        key_url = compute_cache_key(metrics=metrics, edge_mode=None, url=url)
+
+        # Different request types have different keys (urls have "url:" prefix, bytes have "bytes:")
+        assert key_upload != key_url
 
 
 class TestCacheDisabledBehavior:
