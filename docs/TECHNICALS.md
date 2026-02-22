@@ -419,11 +419,13 @@ The API implements **LRU (Least Recently Used) + TTL (Time-to-Live) caching** to
 
 ### How it works
 
-**Cache Key**
+**Cache Key Strategy**
 
-* Generated from image file content (not filename/URL)
-* Hash-based: identical images from different URLs/names return cached result
-* Prevents duplicate analysis work
+* **URL requests**: Key = hash(URL + metrics + edge_mode)
+  - Same URL with same parameters → instant cache hit, no download needed
+  - No image bytes stored in cache
+* **Upload requests**: Key = hash(image_bytes + metrics + edge_mode)
+  - Content-addressable: identical image uploads share cache entry
 
 **Eviction Policy**
 
@@ -468,8 +470,10 @@ docker run -e CACHE_ENABLED=false image-insights-api
 
 **With caching enabled:**
 * Cache hit: ~1-2ms (return stored result)
-* Cache miss: Normal analysis time (~20-100ms depending on image size)
-* Memory: ~10-50MB for 512 entries (varies by image size)
+  - URL requests: No download, no analysis
+  - Upload requests: No analysis needed
+* Cache miss: Full analysis time (~20-100ms + download time for URLs)
+* Memory: ~0.5-1 MB for 512 entries (only metrics stored, no image data)
 
 **Example:** 100 requests, 80% cache hit rate
 * Without cache: 100 × 50ms = **5000ms**
@@ -485,9 +489,17 @@ docker run -e CACHE_MAX_SIZE=2048 image-insights-api
 ```
 
 **Memory estimation:**
-* Per entry: ~100-500 bytes overhead + image processing data
-* 512 entries: ~50-250MB RAM
-* 2048 entries: ~200-1000MB RAM
+
+*Cache stores only computed metrics (never image data):*
+* Per entry: ~500-1000 bytes (brightness, histogram, metadata)
+* 512 entries: **~0.5-1 MB**
+* 2048 entries: **~1-2 MB**
+* 4096 entries: **~2-4 MB**
+
+**Memory savings vs old design:**
+* Old design (with image byte storage): 512 entries = ~30 MB
+* New design (metrics only): 512 entries = ~1 MB
+* **~30x reduction in memory usage** ✅
 
 **Recommended settings:**
 
@@ -515,7 +527,26 @@ services:
 
 ### Implementation details
 
-**Cache storage:** In-memory Python dictionary with LRU eviction
+**Cache architecture:** Single LRU cache for analysis results
+
+**Cache key generation:**
+* URL requests: `BLAKE2b("url:" + URL + "|" + metrics + "|" + edge_mode)`
+* Upload requests: `BLAKE2b("bytes:" + image_bytes + "|" + metrics + "|" + edge_mode)`
+
+**Cached data:**
+* Only aggregate metrics (brightness scores, histograms, metadata)
+* JSON-like dictionaries (~500-1000 bytes each)
+* No image bytes, no pixel data, no URLs stored
+
+**URL request flow:**
+1. Check cache using URL-based key
+2. Cache hit → return metrics (no download needed)
+3. Cache miss → download image → analyze → cache metrics → return
+
+**Upload request flow:**
+1. Check cache using content-based key
+2. Cache hit → return metrics (no re-analysis)
+3. Cache miss → analyze → cache metrics → return
 
 **Thread safety:** Cache is thread-safe (Uvicorn uses multiple workers)
 

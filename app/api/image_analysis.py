@@ -290,10 +290,12 @@ async def analyze_image(
             f"File validated - Size: {file_size_mb:.2f}MB, Content-Type: {image.content_type}"
         )
 
-    # Check cache before processing (key is based on content hash, not filename/URL)
+    # Check cache before processing (key is based on content hash, not filename)
     cache_key = ""
     if settings.CACHE_ENABLED:
-        cache_key = compute_cache_key(contents, requested_metrics, validated_edge_mode)
+        cache_key = compute_cache_key(
+            metrics=requested_metrics, edge_mode=validated_edge_mode, image_bytes=contents
+        )
         cached = _cache.get(cache_key)
         if cached is not None:
             elapsed_time = time.time() - start_time
@@ -424,17 +426,13 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
     # Validate edge_mode parameter
     validated_edge_mode = validate_edge_mode(request.edge_mode)
 
-    # Download and validate image from URL
-    contents = await validate_and_download_from_url(request.url)
-    file_size_mb = len(contents) / (1024 * 1024)
-
-    if settings.ENABLE_DETAILED_LOGGING:
-        logger.info(f"Image downloaded - Size: {file_size_mb:.2f}MB, URL: {redacted_url}")
-
-    # Check cache before processing (key is based on content hash, not the URL)
+    # Check analysis cache BEFORE downloading (key is based on URL, not content)
+    # This allows cache hits without downloading the image at all
     cache_key = ""
     if settings.CACHE_ENABLED:
-        cache_key = compute_cache_key(contents, requested_metrics, validated_edge_mode)
+        cache_key = compute_cache_key(
+            metrics=requested_metrics, edge_mode=validated_edge_mode, url=request.url
+        )
         cached = _cache.get(cache_key)
         if cached is not None:
             elapsed_time = time.time() - start_time
@@ -443,9 +441,18 @@ async def analyze_image_from_url(request: ImageUrlRequest) -> dict[str, Any]:
             response["cached"] = True
             if settings.ENABLE_DETAILED_LOGGING:
                 logger.info(
-                    f"Cache hit - Key: {cache_key[:16]}…, Duration: {response['processing_time_ms']}ms"
+                    f"Cache hit - URL: {redacted_url}, Key: {cache_key[:16]}…, "
+                    f"Duration: {response['processing_time_ms']}ms (no download needed)"
                 )
             return response
+
+    # Cache miss - download and analyze the image
+    contents = await validate_and_download_from_url(request.url)
+
+    file_size_mb = len(contents) / (1024 * 1024)
+
+    if settings.ENABLE_DETAILED_LOGGING:
+        logger.info(f"Image downloaded - Size: {file_size_mb:.2f}MB, URL: {redacted_url}")
 
     # Process image and get results
     response = _process_image_bytes(contents, requested_metrics, validated_edge_mode)

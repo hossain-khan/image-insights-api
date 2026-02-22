@@ -1,8 +1,9 @@
 """In-memory LRU cache for image analysis results.
 
 Privacy-First Design:
-- Cache keys are BLAKE2b hashes of image content + request parameters.
-  The original image bytes, URLs, and filenames are NEVER stored.
+- Cache keys are BLAKE2b hashes of request parameters (URL or image content).
+  For URL requests, only the URL + parameters are stored (no image bytes).
+  For upload requests, image content is hashed and discarded.
 - Cache values contain only aggregate metrics (no pixel data or PII).
 - Cache entries expire after a configurable TTL to bound memory usage.
 - LRU eviction ensures the cache never exceeds a configurable maximum size.
@@ -19,28 +20,48 @@ from typing import Any
 logger = logging.getLogger(__name__)
 
 
-def compute_cache_key(image_bytes: bytes, metrics: set[str], edge_mode: str | None) -> str:
+def compute_cache_key(
+    metrics: set[str],
+    edge_mode: str | None,
+    image_bytes: bytes | None = None,
+    url: str | None = None,
+) -> str:
     """
     Compute a compact, privacy-safe cache key for an image analysis request.
 
-    The key is a BLAKE2b digest of the image content combined with the
-    requested metrics and edge mode.  The original image bytes and any
-    URL or filename are discarded – only the hash is kept.
+    The key generation strategy differs based on request type:
+    - URL requests: hash(URL + metrics + edge_mode) - no image download needed for cache lookup
+    - Upload requests: hash(image_bytes + metrics + edge_mode) - content-addressable
 
     BLAKE2b is used instead of SHA-256 because it is significantly faster
     on modern hardware while still providing strong collision resistance for
     cache correctness.
 
     Args:
-        image_bytes: Raw image content used solely to compute the hash.
         metrics: Set of requested metric names (e.g. {"brightness", "median"}).
         edge_mode: Optional edge analysis mode string.
+        image_bytes: Raw image content (for upload requests).
+        url: Image URL (for URL-based requests).
 
     Returns:
         A hex-encoded BLAKE2b digest string.
+
+    Raises:
+        ValueError: If neither image_bytes nor url is provided, or both are provided.
     """
+    if (image_bytes is None and url is None) or (image_bytes is not None and url is not None):
+        raise ValueError("Exactly one of image_bytes or url must be provided")
+
     hasher = hashlib.blake2b()
-    hasher.update(image_bytes)
+
+    # Add the primary identifier (URL or image bytes)
+    if url is not None:
+        hasher.update(b"url:")
+        hasher.update(url.encode())
+    else:
+        hasher.update(b"bytes:")
+        hasher.update(image_bytes)
+
     # Use "|" as separator between components to prevent hash collisions
     # (e.g. metrics="" + edge_mode="all" vs metrics="all" + edge_mode="")
     hasher.update(b"|")
@@ -54,8 +75,9 @@ class ImageAnalysisCache:
     """
     Thread-safe in-memory LRU cache with TTL for image analysis results.
 
-    Stores only aggregate metric dictionaries – never image bytes, URLs,
-    or any personally identifiable information.
+    Stores only aggregate metric dictionaries – never image bytes or pixel data.
+    For URL-based requests, the cache key includes the URL, so repeated requests
+    to the same URL avoid re-downloading and re-analyzing the image.
     """
 
     def __init__(self, max_size: int = 128, ttl_seconds: int = 3600) -> None:
