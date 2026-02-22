@@ -1,6 +1,6 @@
 {
   "name": "image-insights-api",
-  "version": "1.6.0",
+  "version": "1.7.0",
   "description": "Cloudflare Workers wrapper for Image Insights API container",
   "main": "src/index.ts",
   "scripts": {
