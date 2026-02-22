@@ -1,3 +1,5 @@
+# This workflow automates Docker image builds and publication when a new release tag is pushed.
+# For the full release process documentation, see: ../../RELEASE_PROCESS.md
 name: Release
 
 on:
