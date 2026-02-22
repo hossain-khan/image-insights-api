@@ -1,4 +1,5 @@
 [![CI](https://github.com/hossain-khan/image-insights-api/actions/workflows/ci.yml/badge.svg)](https://github.com/hossain-khan/image-insights-api/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/github/hossain-khan/image-insights-api/graph/badge.svg?token=FC1GBVTSH3)](https://codecov.io/github/hossain-khan/image-insights-api)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://github.com/hossain-khan/image-insights-api/pkgs/container/image-insights-api)
 [![GHCR](https://img.shields.io/badge/ghcr.io-image--insights--api-blue?logo=github&logoColor=white)](https://github.com/hossain-khan/image-insights-api/pkgs/container/image-insights-api)
 [![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688?logo=fastapi&logoColor=white)](https://github.com/hossain-khan/image-insights-api/releases)
