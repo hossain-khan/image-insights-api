@@ -188,6 +188,10 @@ python -c "import json; spec = json.load(open('docs/swagger.json')); print('API 
 
 ### Release Process
 
+> **📖 Full Documentation:** See [docs/RELEASE_PROCESS.md](../docs/RELEASE_PROCESS.md) for comprehensive release workflow, checklist, and troubleshooting guide.
+
+**Quick Release Workflow:**
+
 **Step 1: Create a release branch**
 ```bash
 git checkout -b release/v1.2.0
@@ -218,7 +222,7 @@ git tag -a v1.2.0 -m "Release v1.2.0 - Add edge-based brightness analysis"
 git push origin v1.2.0
 ```
 
-**Step 6: GitHub Actions will automatically**:
+**Step 6: GitHub Actions will automatically** (via [.github/workflows/release.yml](../.github/workflows/release.yml)):
 - Build multi-platform Docker images (amd64, arm64)
 - Push to GitHub Container Registry (`ghcr.io/hossain-khan/image-insights-api:1.2.0`)
 - Create a GitHub Release with auto-generated changelog
