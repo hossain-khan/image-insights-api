@@ -112,6 +112,19 @@ docker stop api-server
 docker rm api-server
 ```
 
+### Live / Production Deployment
+
+```bash
+# Run benchmark directly against live production server
+python scripts/benchmark.py --host https://image-insights.gohk.uk
+
+# Run with custom iterations
+python scripts/benchmark.py --host https://image-insights.gohk.uk --iterations 5
+
+# Save live benchmark results to file
+python scripts/benchmark.py --host https://image-insights.gohk.uk --output docs/BENCHMARK_LIVE.md
+```
+
 ### Custom Configuration
 
 ```bash
